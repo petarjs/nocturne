@@ -12,8 +12,8 @@ export const homelabScene: Scene = {
     acts: [
       {
         hero: "cpu",
-        supporting: ["memory", "network", "services"],
-        ambient: ["clock", "library"],
+        supporting: ["memory", "network"],
+        ambient: ["clock", "services", "library"],
       },
     ],
     rotation: { mode: "off", dwellSec: 20, indicator: "none" },

@@ -19,7 +19,7 @@ export function Stat({
   spark?: number[];
 }) {
   return (
-    <div className="n-surface flex flex-col gap-3 p-6">
+    <div className="n-surface flex h-full w-full flex-col gap-3 p-6">
       <div className="flex items-center justify-between">
         <Label>{label}</Label>
         {delta !== undefined && <Delta value={delta} />}

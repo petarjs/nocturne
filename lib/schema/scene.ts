@@ -14,6 +14,8 @@ export const actSchema = z.object({
   dwellSec: z.number().optional(),
 });
 
+export type Act = z.infer<typeof actSchema>;
+
 export const rotationSchema = z.object({
   mode: z.enum(["off", "auto", "story"]),
   dwellSec: z.number().min(10).default(20),

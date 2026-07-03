@@ -31,7 +31,7 @@ export function Clock() {
   });
 
   return (
-    <div className="n-surface n-surface--hero relative flex flex-col items-center justify-center gap-3 p-10">
+    <div className="n-surface n-surface--hero relative flex h-full w-full flex-col items-center justify-center gap-3 p-10">
       <Label>{dateLabel}</Label>
       <div className="relative flex items-center justify-center">
         <span

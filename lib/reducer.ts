@@ -63,11 +63,15 @@ export function reduce(scene: Scene, op: Op, deps: ReducerDeps = {}): Scene {
     case "setMood":
       return { ...scene, mood: op.mood };
 
-    case "triggerMoment":
-      return updateWidgetById(scene, op.id, (w) => ({
+    case "triggerMoment": {
+      const next = updateWidgetById(scene, op.id, (w) => ({
         ...w,
         state: op.tier === "t3" ? "critical" : op.tier === "t2" ? "attention" : w.state,
       }));
+      // alert mood is entered automatically by t3 (§4.5); it's cleared
+      // explicitly (condition clears / op resets it), not by the reducer.
+      return op.tier === "t3" ? { ...next, mood: "alert" } : next;
+    }
 
     case "setScene":
       return op.scene;
