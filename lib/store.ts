@@ -2,6 +2,9 @@ import { create } from "zustand";
 import type { Scene, Op } from "./schema";
 import { reduce, reduceBatch } from "./reducer";
 import { homelabScene, scenePresets } from "@/fixtures/scenes";
+
+// Fixed epoch so SSR and client agree on staleness timestamps (hydration-safe).
+const INITIAL_UPDATED_AT = Date.UTC(2026, 6, 3, 22, 0, 0);
 import { momentBus } from "./moments/bus";
 
 type SceneStore = {
@@ -26,7 +29,7 @@ function runSideEffects(op: Op, lastUpdated: Record<string, number>) {
 
 export const useSceneStore = create<SceneStore>((set, get) => ({
   scene: homelabScene,
-  lastUpdated: Object.fromEntries(homelabScene.widgets.map((w) => [w.id, Date.now()])),
+  lastUpdated: Object.fromEntries(homelabScene.widgets.map((w) => [w.id, INITIAL_UPDATED_AT])),
   applyOp: (op) => {
     const lastUpdated = { ...get().lastUpdated };
     runSideEffects(op, lastUpdated);

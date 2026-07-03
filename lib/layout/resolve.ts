@@ -87,7 +87,9 @@ function solveLandscape(act: Act): LayoutResult {
     // leftover space into two strips too narrow to pack anything — so
     // centering only happens when there's truly nothing to pack beside it.
     const heroCols = supporting.length > 0 ? 6 : 8;
-    const heroRows = promoted ? 3 : 4;
+    // When the ambient strip is present, stretch the hero through the last
+    // content row so row 4 doesn't sit empty between the main stage and rail.
+    const heroRows = promoted ? 3 : hasAmbient ? contentRows : 4;
     const centered = !promoted && supporting.length === 0;
     const col = centered ? Math.floor((COLS - heroCols) / 2) : 0;
     const cell: GridCell = { col, row: 0, colSpan: heroCols, rowSpan: heroRows };
@@ -97,9 +99,18 @@ function solveLandscape(act: Act): LayoutResult {
 
   // 4×3 only when there's exactly one supporting widget to stack — with two
   // or more, 4×2 is what actually lets them stack within the available rows.
-  const supportCell = supporting.length >= 2 ? { colSpan: 4, rowSpan: 2 } : { colSpan: 4, rowSpan: 3 };
-  for (const id of supporting) {
-    place(id, supportCell.colSpan, supportCell.rowSpan, contentRows);
+  // When ambient is present, use 3+2 row spans so supporting fills all
+  // content rows beside the hero (no dead row under network).
+  if (supporting.length >= 2) {
+    const spans = hasAmbient ? [3, 2] : [2, 2];
+    supporting.forEach((id, i) => {
+      place(id, 4, spans[i] ?? 2, contentRows);
+    });
+  } else {
+    const supportCell = { colSpan: 4, rowSpan: hasAmbient ? contentRows : 3 };
+    for (const id of supporting) {
+      place(id, supportCell.colSpan, supportCell.rowSpan, contentRows);
+    }
   }
 
   if (hasAmbient) {

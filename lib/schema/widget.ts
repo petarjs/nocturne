@@ -156,6 +156,6 @@ export const widgetSchema = z.object({
 
 export type Widget = z.infer<typeof widgetSchema>;
 
-export function parsePresetData(type: PresetType, data: unknown) {
-  return presetDataSchemas[type].parse(data);
+export function parsePresetData<T extends PresetType>(type: T, data: unknown): z.infer<(typeof presetDataSchemas)[T]> {
+  return presetDataSchemas[type].parse(data) as z.infer<(typeof presetDataSchemas)[T]>;
 }

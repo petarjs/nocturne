@@ -7,7 +7,13 @@ import { Background } from "@/components/background/Background";
 import { Stage } from "@/components/layout/Stage";
 import { Clock } from "@/components/widgets/Clock";
 import { Stat } from "@/components/widgets/Stat";
+import { Gauge } from "@/components/widgets/Gauge";
+import { Timeseries } from "@/components/widgets/Timeseries";
+import { StatusGrid } from "@/components/widgets/StatusGrid";
+import { List } from "@/components/widgets/List";
 import type { Widget } from "@/lib/schema";
+import type { WidgetSlot } from "@/lib/layout/types";
+import { parsePresetData } from "@/lib/schema/widget";
 import { useEffectTier } from "@/lib/tiers";
 import { useHeartbeat } from "@/lib/heartbeat";
 import { useStalenessWatcher } from "@/lib/staleness";
@@ -23,16 +29,30 @@ function FallbackWidget({ widget }: { widget: Widget }) {
   );
 }
 
-function renderWidget(widget: Widget) {
+function renderWidget(widget: Widget, slot: WidgetSlot) {
   switch (widget.type) {
     case "clock":
-      return <Clock />;
-    case "stat":
-      return (
-        <Stat
-          {...(widget.data as { label: string; value: number; unit?: string; delta?: number; spark?: number[] })}
-        />
-      );
+      return <Clock slot={slot} />;
+    case "stat": {
+      const data = parsePresetData("stat", widget.data);
+      return <Stat {...data} label={widget.title ?? data.label} />;
+    }
+    case "gauge": {
+      const data = parsePresetData("gauge", widget.data);
+      return <Gauge {...data} label={widget.title ?? data.label} />;
+    }
+    case "timeseries": {
+      const data = parsePresetData("timeseries", widget.data);
+      return <Timeseries {...data} label={widget.title ?? data.label} />;
+    }
+    case "statusGrid": {
+      const data = parsePresetData("statusGrid", widget.data);
+      return <StatusGrid label={widget.title} items={data.items} slot={slot} />;
+    }
+    case "list": {
+      const data = parsePresetData("list", widget.data);
+      return <List label={widget.title} items={data.items} slot={slot} />;
+    }
     default:
       return <FallbackWidget widget={widget} />;
   }

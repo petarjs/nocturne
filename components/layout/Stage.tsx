@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { Act, Mood, MotionDialect, ThemeTokens, Widget } from "@/lib/schema";
+import type { WidgetSlot } from "@/lib/layout/types";
 import { resolveLayout } from "@/lib/layout/resolve";
 import { dialects, enterTransition, exitTransition } from "@/lib/dialects";
 import { momentBus, type MomentEvent } from "@/lib/moments/bus";
 
-type Role = "hero" | "supporting" | "ambient";
+type Role = WidgetSlot;
 
 // widget opacity by mood + role (§4.5 focus, and the t3 "everything else
 // dims to 70%" rule folded in for alert since it's the same mechanism)
@@ -80,7 +81,7 @@ export function Stage({
   theme: ThemeTokens;
   mood: Mood;
   lastUpdated: Record<string, number>;
-  renderWidget: (widget: Widget) => React.ReactNode;
+  renderWidget: (widget: Widget, slot: WidgetSlot) => React.ReactNode;
 }) {
   const layout = resolveLayout(act, "landscape");
   const flashes = useMomentFlashes();
@@ -148,7 +149,7 @@ export function Stage({
                 }}
                 transition={{ type: "spring", stiffness: 260, damping: 22 }}
               >
-                {renderWidget(widget)}
+                {renderWidget(widget, roleOf(widget.id))}
                 {stale && (
                   <div className="n-label absolute right-4 top-4 rounded-full bg-black/30 px-2 py-0.5">
                     stale · {staleMinutes}m

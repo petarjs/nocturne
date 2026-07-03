@@ -49,7 +49,10 @@ export function setStoredTier(tier: EffectTier) {
  * regardless of measured tier.
  */
 export function useEffectTier(): { tier: EffectTier; reducedMotion: boolean; setTier: (t: EffectTier) => void } {
-  const [tier, setTierState] = useState<EffectTier>(() => getStoredTier() ?? 3);
+  // Always start at tier 3 so SSR and the first client paint match — reading
+  // localStorage in the initializer would diverge (hydration mismatch on the
+  // "tier N" label). Stored/detected tier is applied in useEffect instead.
+  const [tier, setTierState] = useState<EffectTier>(3);
   const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -57,7 +60,10 @@ export function useEffectTier(): { tier: EffectTier; reducedMotion: boolean; set
     setReducedMotion(detectReducedMotion());
 
     const stored = getStoredTier();
-    if (stored) return; // manual override persisted — skip sampling
+    if (stored) {
+      setTierState(stored);
+      return;
+    }
 
     sampleFpsTier().then((detected) => {
       setTierState(detected);
