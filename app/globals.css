@@ -56,7 +56,7 @@ body {
 
 .n-label {
   font-family: var(--n-font-data);
-  font-size: 13px;
+  font-size: var(--n-label-size, 13px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgb(from var(--n-text2) r g b / 0.6);

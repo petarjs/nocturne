@@ -12,5 +12,5 @@ export const valueSizeForSlot = {
 export const surfacePadForSlot = {
   hero: "p-6",
   supporting: "p-5",
-  ambient: "px-4 py-2",
+  ambient: "px-5 py-2",
 } as const;

@@ -12,28 +12,66 @@ type StatusItem = {
 
 function StatusRow({
   item,
-  compact,
   hero,
 }: {
   item: StatusItem;
-  compact?: boolean;
   hero?: boolean;
 }) {
-  const textSize = hero ? "text-[18px]" : compact ? "text-[11px]" : "text-[14px]";
-  const downSize = hero ? "text-[16px]" : compact ? "text-[10px]" : "text-[12px]";
-
   return (
-    <div className={`flex min-w-0 items-center gap-1.5 ${item.state === "down" && hero ? "rounded-md bg-[var(--n-negative)]/10 px-2 py-1" : ""}`}>
-      <Dot state={item.state} />
-      <span className={`n-data min-w-0 truncate ${textSize} ${item.state === "down" && hero ? "font-medium" : ""}`}>
+    <div className={`flex min-w-0 items-center gap-2 ${item.state === "down" && hero ? "rounded-md bg-[var(--n-negative)]/10 px-2 py-1" : ""}`}>
+      <Dot state={item.state} size={hero ? "md" : "sm"} />
+      <span
+        className={`n-data min-w-0 truncate ${hero ? "text-[length:calc(var(--n-meta-size)*1.25)] font-medium" : "text-[length:var(--n-meta-size)]"}`}
+      >
         {item.label}
       </span>
       {item.state === "down" ? (
-        <span className={`n-data shrink-0 uppercase tracking-wider ${downSize}`} style={{ color: "var(--n-negative)" }}>
+        <span
+          className="n-data shrink-0 text-[length:calc(var(--n-meta-size)*0.85)] uppercase tracking-wider"
+          style={{ color: "var(--n-negative)" }}
+        >
           down
         </span>
       ) : item.latency !== undefined ? (
-        <span className={`n-data shrink-0 ${compact ? "text-[10px]" : "text-[12px]"}`} style={{ color: "var(--n-text2)" }}>
+        <span
+          className="n-data shrink-0 text-[length:calc(var(--n-meta-size)*0.9)] tabular-nums"
+          style={{ color: "var(--n-text1)", opacity: 0.55 }}
+        >
+          {item.latency}ms
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/** Compact cell for the ambient rail — fills height, name left / metric right. */
+function AmbientStatusCell({ item }: { item: StatusItem }) {
+  const isDown = item.state === "down";
+
+  return (
+    <div
+      className={`flex h-full min-w-0 items-center justify-between gap-2 rounded-[calc(var(--n-radius)-2px)] px-2 ${
+        isDown ? "bg-[var(--n-negative)]/8" : ""
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <Dot state={item.state} size="md" />
+        <span className={`n-data min-w-0 truncate text-[length:var(--n-meta-size)] ${isDown ? "font-medium" : ""}`}>
+          {item.label}
+        </span>
+      </div>
+      {isDown ? (
+        <span
+          className="n-data shrink-0 text-[length:calc(var(--n-meta-size)*0.85)] font-medium uppercase tracking-wider"
+          style={{ color: "var(--n-negative)" }}
+        >
+          down
+        </span>
+      ) : item.latency !== undefined ? (
+        <span
+          className="n-data shrink-0 text-[length:var(--n-meta-size)] tabular-nums"
+          style={{ color: "var(--n-text1)", opacity: 0.7 }}
+        >
           {item.latency}ms
         </span>
       ) : null}
@@ -64,11 +102,13 @@ export function Matrix({
 
   if (slot === "ambient") {
     return (
-      <div className={`n-surface flex h-full w-full items-stretch gap-3 overflow-hidden ${pad}`}>
-        {label && <Label className="flex w-16 shrink-0 items-center leading-tight">{label}</Label>}
-        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-3 grid-rows-2 content-center gap-x-2 gap-y-0.5">
+      <div className={`n-surface flex h-full w-full items-stretch gap-4 overflow-hidden ${pad}`}>
+        {label && (
+          <Label className="flex shrink-0 items-center self-center leading-none">{label}</Label>
+        )}
+        <div className="grid h-full min-h-0 min-w-0 flex-1 grid-cols-3 grid-rows-2 gap-x-4 gap-y-0">
           {sorted.map((item) => (
-            <StatusRow key={item.id} item={item} compact />
+            <AmbientStatusCell key={item.id} item={item} />
           ))}
         </div>
       </div>
@@ -86,10 +126,10 @@ export function Matrix({
           <div className="flex shrink-0 flex-col gap-2 rounded-[calc(var(--n-radius)-4px)] border border-[var(--n-negative)]/25 bg-[var(--n-negative)]/8 p-4">
             {downItems.map((item) => (
               <div key={item.id} className="flex items-center gap-3">
-                <Dot state={item.state} />
-                <span className="n-data text-[22px] font-medium">{item.label}</span>
+                <Dot state={item.state} size="md" />
+                <span className="n-data text-[length:calc(var(--n-meta-size)*1.5)] font-medium">{item.label}</span>
                 <span
-                  className="n-data ml-auto text-[14px] uppercase tracking-[0.12em]"
+                  className="n-data ml-auto text-[length:var(--n-meta-size)] uppercase tracking-[0.12em]"
                   style={{ color: "var(--n-negative)" }}
                 >
                   down

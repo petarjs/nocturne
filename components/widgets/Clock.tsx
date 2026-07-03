@@ -42,7 +42,12 @@ export function Clock({ slot = "hero" }: { slot?: WidgetSlot }) {
         <div className="flex shrink-0 items-center gap-2">
           <span
             className="n-data"
-            style={{ fontSize: 36, fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1 }}
+            style={{
+              fontSize: "calc(var(--n-value-l) * 0.45)",
+              fontWeight: 400,
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
+            }}
           >
             {time}
           </span>
@@ -64,7 +69,12 @@ export function Clock({ slot = "hero" }: { slot?: WidgetSlot }) {
       <div className="relative flex items-center justify-center">
         <span
           className="n-data"
-          style={{ fontSize: 132, fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1 }}
+          style={{
+            fontSize: "var(--n-value-hero)",
+            fontWeight: 400,
+            letterSpacing: "-0.02em",
+            lineHeight: 1,
+          }}
         >
           {time}
         </span>

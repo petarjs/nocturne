@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import type { ThemeTokens, Mood } from "@/lib/schema";
 import { AuroraEngine } from "@/lib/engines/aurora";
 import { FlatEngine } from "@/lib/engines/flat";
+import { GridHorizonEngine } from "@/lib/engines/gridHorizon";
+import { ParticlesEngine } from "@/lib/engines/particles";
 import type { BackgroundEngine } from "@/lib/engines/types";
 import { momentBus, type MomentEvent } from "@/lib/moments/bus";
 import { HEARTBEAT_CENTER_ID } from "@/lib/heartbeat";
@@ -12,16 +14,22 @@ function createEngine(
   engineName: ThemeTokens["background"]["engine"],
   tier: 1 | 2 | 3
 ): BackgroundEngine {
-  if (tier >= 3) {
+  if (tier >= 2) {
     switch (engineName) {
       case "aurora":
         return new AuroraEngine();
+      case "gridHorizon":
+        return new GridHorizonEngine();
+      case "particles":
+        return new ParticlesEngine();
+      case "growth":
+        // growth branch is a later slice — petals carry Kanso until then (§5.6)
+        return new ParticlesEngine();
       default:
-        // gridHorizon / particles / phosphor / growth / deepField land in later slices
         return new FlatEngine();
     }
   }
-  // tier 1-2: every theme maps to `flat` with its own palette (§4.7, §5.1)
+  // tier 1: every theme maps to `flat` with its own palette (§4.7, §5.1)
   return new FlatEngine();
 }
 

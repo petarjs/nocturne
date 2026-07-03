@@ -9,11 +9,14 @@ export function Value({
   value,
   decimals = 0,
   size = "value-m",
+  fontSize,
   className = "",
 }: {
   value: number;
   decimals?: number;
   size?: "value-s" | "value-m" | "value-l" | "value-hero";
+  /** Explicit px size — overrides the `size` token (used when sizing to a container). */
+  fontSize?: number;
   className?: string;
 }) {
   const spring = useSpring(value, { stiffness: 170, damping: 26 });
@@ -27,12 +30,21 @@ export function Value({
 
   useMotionValueEvent(formatted, "change", setText);
 
-  const sizePx = { "value-s": 28, "value-m": 44, "value-l": 76, "value-hero": 132 }[size];
+  const sizeVar = {
+    "value-s": "var(--n-value-s)",
+    "value-m": "var(--n-value-m)",
+    "value-l": "var(--n-value-l)",
+    "value-hero": "var(--n-value-hero)",
+  }[size];
 
   return (
     <motion.span
       className={`n-data ${className}`}
-      style={{ fontSize: sizePx, fontWeight: size === "value-hero" ? 400 : 500, lineHeight: 1 }}
+      style={{
+        fontSize: fontSize ?? sizeVar,
+        fontWeight: size === "value-hero" ? 400 : 500,
+        lineHeight: 1,
+      }}
     >
       {text}
     </motion.span>

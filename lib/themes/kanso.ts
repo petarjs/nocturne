@@ -29,6 +29,7 @@ export const kanso: ThemeTokens = {
   },
   background: {
     engine: "growth",
+    preset: "petals",
   },
   density: "normal",
 };
