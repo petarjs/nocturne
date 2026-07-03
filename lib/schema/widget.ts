@@ -1,0 +1,161 @@
+import { z } from "zod";
+
+export const presetTypeSchema = z.enum([
+  "clock",
+  "stat",
+  "gauge",
+  "timeseries",
+  "barChart",
+  "donut",
+  "statusGrid",
+  "table",
+  "list",
+  "ticker",
+  "nowPlaying",
+  "weather",
+  "agenda",
+  "headline",
+  "text",
+  "image",
+  "video",
+]);
+export type PresetType = z.infer<typeof presetTypeSchema>;
+
+const seriesPointSchema = z.object({ t: z.number(), v: z.number() });
+
+export const presetDataSchemas = {
+  clock: z.object({}),
+  stat: z.object({
+    label: z.string(),
+    value: z.number(),
+    unit: z.string().optional(),
+    delta: z.number().optional(),
+    spark: z.array(z.number()).optional(),
+  }),
+  gauge: z.object({
+    label: z.string(),
+    value: z.number(),
+    min: z.number(),
+    max: z.number(),
+    warn: z.number().optional(),
+    crit: z.number().optional(),
+  }),
+  timeseries: z.object({
+    label: z.string(),
+    series: z.array(seriesPointSchema),
+    window: z.string().optional(),
+  }),
+  barChart: z.object({
+    label: z.string(),
+    categories: z.array(z.object({ label: z.string(), value: z.number() })),
+  }),
+  donut: z.object({
+    label: z.string(),
+    segments: z.array(z.object({ label: z.string(), value: z.number() })).max(5),
+  }),
+  statusGrid: z.object({
+    items: z.array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+        state: z.enum(["up", "down", "degraded"]),
+        latency: z.number().optional(),
+      })
+    ),
+  }),
+  table: z.object({
+    columns: z.array(
+      z.object({
+        key: z.string(),
+        label: z.string(),
+        type: z.enum(["text", "num", "delta", "status"]),
+      })
+    ),
+    rows: z.array(z.record(z.string(), z.union([z.string(), z.number()]))),
+  }),
+  list: z.object({
+    items: z.array(
+      z.object({ id: z.string(), label: z.string(), value: z.union([z.string(), z.number()]) })
+    ),
+  }),
+  ticker: z.object({
+    lines: z.array(
+      z.object({ t: z.string(), text: z.string(), level: z.enum(["info", "warn", "error"]).optional() })
+    ),
+  }),
+  nowPlaying: z.object({
+    title: z.string(),
+    artist: z.string(),
+    artUrl: z.string().optional(),
+    progress: z.number().min(0).max(1),
+    state: z.enum(["playing", "paused"]),
+  }),
+  weather: z.object({
+    tempC: z.number(),
+    condition: z.string(),
+    hi: z.number(),
+    lo: z.number(),
+    hourly: z.array(z.object({ t: z.string(), tempC: z.number() })).optional(),
+  }),
+  agenda: z.object({
+    events: z.array(
+      z.object({ id: z.string(), title: z.string(), startsAt: z.string(), endsAt: z.string() })
+    ),
+  }),
+  headline: z.object({
+    text: z.string(),
+    kicker: z.string().optional(),
+    tone: z.enum(["neutral", "positive", "negative"]).optional(),
+  }),
+  text: z.object({ md: z.string() }),
+  image: z.object({
+    src: z.string(),
+    fit: z.enum(["cover", "contain"]).default("cover"),
+    kenBurns: z.boolean().optional(),
+  }),
+  video: z.object({
+    src: z.string(),
+    poster: z.string(),
+    loop: z.boolean().default(true),
+  }),
+} as const;
+
+export const compositeSchema = z.object({
+  type: z.literal("composite"),
+  archetype: z.enum([
+    "heroValue",
+    "statRow",
+    "chartCard",
+    "matrix",
+    "tableCard",
+    "streamCard",
+    "textCard",
+    "mediaCard",
+    "splitCard",
+  ]),
+  slots: z.record(z.string(), z.unknown()),
+  data: z.unknown(),
+});
+
+export const widgetSchema = z.object({
+  id: z.string(),
+  type: z.union([presetTypeSchema, z.literal("composite")]),
+  title: z.string().optional(),
+  data: z.unknown(),
+  bind: z
+    .object({
+      source: z.string().optional(),
+      ttlSec: z.number().default(60),
+    })
+    .optional(),
+  accent: z.enum(["accent1", "accent2"]).optional(),
+  thresholds: z.record(z.string(), z.number()).optional(),
+  state: z.enum(["normal", "attention", "critical", "stale"]).default("normal"),
+  pinned: z.boolean().optional(),
+});
+
+export type Widget = z.infer<typeof widgetSchema>;
+
+export function parsePresetData(type: PresetType, data: unknown) {
+  return presetDataSchemas[type].parse(data);
+}

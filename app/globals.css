@@ -1,8 +1,30 @@
 @import "tailwindcss";
 
+/*
+ * Nocturne theme tokens (§3.1). These are the fallback / default values —
+ * the theme provider overwrites them on the display root when a scene loads.
+ * bg0 is never pure black (§2.3 rule 1).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --n-bg0: #0a0e1a;
+  --n-bg1: #101627;
+  --n-surface-tint: #8fa8c7;
+  --n-text1: #e8edf7;
+  --n-text2: #93a0b8;
+  --n-accent1: #5eead4;
+  --n-accent2: #818cf8;
+  --n-positive: #4ade80;
+  --n-negative: #f87171;
+
+  --n-font-display: var(--font-geist-sans);
+  --n-font-data: var(--font-geist-mono);
+  --n-scale-ratio: 1.5;
+
+  --n-radius: 20px;
+  --n-density-pad: 24px;
+
+  --background: var(--n-bg0);
+  --foreground: var(--n-text1);
 }
 
 @theme inline {
@@ -12,15 +34,36 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--n-font-display), Arial, Helvetica, sans-serif;
+}
+
+/* the panel recipe (§3.4) — every widget surface uses this, no improvising */
+.n-surface {
+  background: rgb(from var(--n-surface-tint) r g b / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.06);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  border-radius: var(--n-radius);
+}
+
+.n-surface--hero {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 0 48px rgb(from var(--n-accent1) r g b / 0.1);
+}
+
+.n-label {
+  font-family: var(--n-font-data);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(from var(--n-text2) r g b / 0.6);
+}
+
+.n-data {
+  font-family: var(--n-font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--n-text1);
 }
