@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useSceneStore } from "@/lib/store";
-import { resolveTheme } from "@/lib/themes";
+import { ThemeScope } from "@/components/display/ThemeScope";
+import { ControlDrawer } from "@/components/drawer/ControlDrawer";
 import { Background } from "@/components/background/Background";
 import { Stage } from "@/components/layout/Stage";
 import { Clock } from "@/components/widgets/Clock";
@@ -14,9 +13,13 @@ import { List } from "@/components/widgets/List";
 import type { Widget } from "@/lib/schema";
 import type { WidgetSlot } from "@/lib/layout/types";
 import { parsePresetData } from "@/lib/schema/widget";
-import { useEffectTier } from "@/lib/tiers";
+import { useMotionPrefs } from "@/lib/motion-prefs";
+import { useDrawerOpen } from "@/lib/drawer/useDrawerOpen";
+import { useFps } from "@/lib/fps";
 import { useHeartbeat } from "@/lib/heartbeat";
 import { useStalenessWatcher } from "@/lib/staleness";
+import { useSceneStore } from "@/lib/store";
+import { resolveTheme } from "@/lib/themes";
 
 function FallbackWidget({ widget }: { widget: Widget }) {
   return (
@@ -64,39 +67,45 @@ export default function DisplayPage() {
   const lastUpdated = useSceneStore((s) => s.lastUpdated);
   const theme = resolveTheme(scene.theme);
   const act = scene.narrative.acts[0];
-  const { tier, reducedMotion } = useEffectTier();
+  const motion = useMotionPrefs();
+  const { open: drawerOpen } = useDrawerOpen();
+  const fps = useFps(!drawerOpen);
 
-  useHeartbeat(scene.mood, act.hero, reducedMotion);
+  useHeartbeat(scene.mood, act?.hero, motion.reducedMotion);
   useStalenessWatcher(scene, lastUpdated);
 
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      // dev-only escape hatch until the control drawer (§10) exists —
-      // lets us drive narrative/op changes and moments from the console.
-      (window as unknown as { __nocturne: typeof useSceneStore }).__nocturne = useSceneStore;
-    }
-  }, []);
-
   return (
-    <div className="relative h-screen w-full overflow-hidden">
-      <Background theme={theme} mood={scene.mood} tier={tier} />
-      <div className="relative z-10 flex h-full flex-col gap-6 p-12">
-        <div className="n-label">
-          {scene.name} · {scene.mood} · tier {tier}
-          {reducedMotion ? " · reduced motion" : ""}
+    <ThemeScope theme={theme}>
+      <div className="flex h-screen w-full overflow-hidden">
+        <div className="relative isolate min-w-0 flex-1">
+          <Background theme={theme} mood={scene.mood} tier={motion.tier} />
+          <div className="relative z-10 flex h-full flex-col gap-6 p-12">
+            <div className="n-label">
+              {scene.name} · {scene.mood} · tier {motion.tier}
+              {motion.reducedMotion ? " · reduced motion" : ""}
+            </div>
+            <div className="min-h-0 flex-1">
+              {act && (
+                <Stage
+                  act={act}
+                  widgets={scene.widgets}
+                  dialect={theme.motion.dialect}
+                  theme={theme}
+                  mood={scene.mood}
+                  lastUpdated={lastUpdated}
+                  renderWidget={renderWidget}
+                />
+              )}
+            </div>
+          </div>
+          {!drawerOpen && (
+            <div className="n-label pointer-events-none absolute bottom-4 right-4 opacity-40">
+              {fps} fps · ` control
+            </div>
+          )}
         </div>
-        <div className="min-h-0 flex-1">
-          <Stage
-            act={act}
-            widgets={scene.widgets}
-            dialect={theme.motion.dialect}
-            theme={theme}
-            mood={scene.mood}
-            lastUpdated={lastUpdated}
-            renderWidget={renderWidget}
-          />
-        </div>
+        {drawerOpen && <ControlDrawer motion={motion} />}
       </div>
-    </div>
+    </ThemeScope>
   );
 }

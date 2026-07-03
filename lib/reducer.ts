@@ -9,6 +9,21 @@ function updateWidgetById(scene: Scene, id: string, fn: (w: Widget) => Widget): 
   return { ...scene, widgets: scene.widgets.map((w) => (w.id === id ? fn(w) : w)) };
 }
 
+/** pushData is partial by design — the curl one-liner sends `{"value":73}` (§9.4). */
+export function mergeWidgetData(existing: unknown, patch: unknown): unknown {
+  if (
+    existing !== null &&
+    typeof existing === "object" &&
+    !Array.isArray(existing) &&
+    patch !== null &&
+    typeof patch === "object" &&
+    !Array.isArray(patch)
+  ) {
+    return { ...(existing as Record<string, unknown>), ...(patch as Record<string, unknown>) };
+  }
+  return patch;
+}
+
 export function reduce(scene: Scene, op: Op, deps: ReducerDeps = {}): Scene {
   switch (op.type) {
     case "setNarrative":
@@ -84,7 +99,11 @@ export function reduce(scene: Scene, op: Op, deps: ReducerDeps = {}): Scene {
       return deps.scenesByName?.[op.name] ?? scene;
 
     case "pushData":
-      return updateWidgetById(scene, op.id, (w) => ({ ...w, data: op.data, state: "normal" }));
+      return updateWidgetById(scene, op.id, (w) => ({
+        ...w,
+        data: mergeWidgetData(w.data, op.data),
+        state: "normal",
+      }));
 
     default: {
       const _exhaustive: never = op;

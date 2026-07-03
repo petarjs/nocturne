@@ -111,7 +111,8 @@ export function Background({
       // remount on engine/tier change: a canvas can't switch WebGL↔2D context type in place
       key={`${tier}-${theme.background.engine}`}
       ref={canvasRef}
-      className="fixed inset-0 -z-10 h-full w-full"
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-0 h-full w-full"
       style={{ background: theme.palette.bg0 }}
     />
   );
