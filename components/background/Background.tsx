@@ -152,8 +152,6 @@ export function Background({
       resizeObserver.disconnect();
       momentBus.removeEventListener("moment", onMoment);
       engine.dispose();
-      overlayEngineRef.current?.dispose();
-      overlayEngineRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -191,16 +189,22 @@ export function Background({
     };
   }, [morphActive, morphFrom, morphTo, tier, mood]);
 
+  const overlayEngineKey =
+    morphActive && morphTo
+      ? `${tier}-${morphTo.background.engine}-${morphTo.id}`
+      : "idle";
+
   return (
     <div className="pointer-events-none absolute inset-0 z-0 h-full w-full">
       <canvas
-        key={`${tier}-${theme.background.engine}-${mood}`}
+        key={`${tier}-${theme.background.engine}-${theme.id}-${mood}`}
         ref={canvasRef}
         aria-hidden
         className="absolute inset-0 h-full w-full"
         style={{ background: theme.palette.bg0 }}
       />
       <canvas
+        key={overlayEngineKey}
         ref={overlayRef}
         aria-hidden
         className="absolute inset-0 h-full w-full transition-opacity duration-75"

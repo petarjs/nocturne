@@ -272,7 +272,10 @@ export class ParticlesEngine implements BackgroundEngine {
     canvas.height = canvas.clientHeight;
   }
 
-  dispose() {}
+  dispose() {
+    this.ctx = null;
+    this.canvas = undefined;
+  }
 }
 
 function hexToRgba(hex: string, alpha: number): string {

@@ -145,5 +145,7 @@ export class AuroraEngine implements BackgroundEngine {
     this.canvas?.removeEventListener("webglcontextrestored", this.contextRestoredHandler);
     this.material?.dispose();
     this.renderer?.dispose();
+    this.renderer?.forceContextLoss();
+    this.renderer = undefined;
   }
 }
