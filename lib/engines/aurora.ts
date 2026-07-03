@@ -42,7 +42,10 @@ export class AuroraEngine implements BackgroundEngine {
 
   private buildMaterial(theme: ThemeTokens) {
     const preset = theme.background.preset ?? "default";
-    // observatory: teal-primary aurora; accent2 (indigo) is a subtle secondary wash, not a blue smear
+    const boost =
+      typeof theme.background.params?.auroraBoost === "number"
+        ? theme.background.params.auroraBoost
+        : 1;
     const accent2Mix = preset === "observatory" ? 0.3 : 1;
 
     this.material = new THREE.ShaderMaterial({
@@ -50,7 +53,7 @@ export class AuroraEngine implements BackgroundEngine {
       fragmentShader: auroraFragmentShader,
       uniforms: {
         uTime: { value: 0 },
-        uSpeed: { value: preset === "smoke" ? 0.01 : 0.02 },
+        uSpeed: { value: (preset === "smoke" ? 0.012 : 0.038) * (theme.motion.speed || 1) * boost },
         uRes: { value: new THREE.Vector2(1, 1) },
         uColorBg: { value: colorToVec3(theme.palette.bg0) },
         uColorA: { value: colorToVec3(theme.palette.accent1) },

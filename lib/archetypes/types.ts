@@ -9,8 +9,9 @@ export const valueSizeForSlot = {
   ambient: "value-s",
 } as const;
 
+/** Padding scales with --n-density-pad from ThemeScope (§3.3). */
 export const surfacePadForSlot = {
-  hero: "p-6",
-  supporting: "p-5",
-  ambient: "px-5 py-2",
+  hero: "p-[var(--n-density-pad)]",
+  supporting: "p-[calc(var(--n-density-pad)*0.85)]",
+  ambient: "px-[calc(var(--n-density-pad)*0.85)] py-2",
 } as const;

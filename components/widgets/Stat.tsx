@@ -8,6 +8,7 @@ export function Stat({
   unit,
   delta,
   spark,
+  widgetId,
 }: {
   slot?: WidgetSlot;
   label: string;
@@ -15,6 +16,17 @@ export function Stat({
   unit?: string;
   delta?: number;
   spark?: number[];
+  widgetId?: string;
 }) {
-  return <HeroValue slot={slot} label={label} value={value} unit={unit} delta={delta} spark={spark} />;
+  return (
+    <HeroValue
+      slot={slot}
+      label={label}
+      value={value}
+      unit={unit}
+      delta={delta}
+      spark={spark}
+      widgetId={widgetId}
+    />
+  );
 }

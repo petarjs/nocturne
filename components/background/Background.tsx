@@ -16,7 +16,6 @@ function createEngine(
   mood: Mood
 ): BackgroundEngine {
   if (tier >= 2) {
-    // sleep mood: universal starfield tinted by theme (§4.5)
     if (mood === "sleep") return new ParticlesEngine();
 
     switch (engineName) {
@@ -27,7 +26,6 @@ function createEngine(
       case "particles":
         return new ParticlesEngine();
       case "growth":
-        // growth branch is a later slice — petals carry Kanso until then (§5.6)
         return new ParticlesEngine();
       default:
         return new FlatEngine();
@@ -36,12 +34,13 @@ function createEngine(
   return new FlatEngine();
 }
 
-function engineInitParams(theme: ThemeTokens, mood: Mood): EngineParams {
-  if (mood === "sleep") return { preset: "starfield" };
+function engineInitParams(theme: ThemeTokens, mood: Mood, tier: 1 | 2 | 3): EngineParams {
+  const base: EngineParams = { tier };
+  if (mood === "sleep") return { ...base, preset: "starfield" };
   if (theme.background.engine === "growth") {
-    return { preset: "petals", ...(theme.background.params ?? {}) };
+    return { ...base, preset: "petals", ...(theme.background.params ?? {}) };
   }
-  return theme.background.params ?? {};
+  return { ...base, ...(theme.background.params ?? {}) };
 }
 
 function widgetCenterNdc(widgetId: string): [number, number] | null {
@@ -58,26 +57,42 @@ export function Background({
   theme,
   mood,
   tier = 3,
+  morphActive = false,
+  morphFrom,
+  morphTo,
+  bgT = 0,
 }: {
   theme: ThemeTokens;
   mood: Mood;
   tier?: 1 | 2 | 3;
+  morphActive?: boolean;
+  morphFrom?: ThemeTokens | null;
+  morphTo?: ThemeTokens;
+  bgT?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<BackgroundEngine | null>(null);
+  const overlayEngineRef = useRef<BackgroundEngine | null>(null);
   const moodRef = useRef(mood);
+  const morphRef = useRef({ morphActive, bgT, morphFrom, morphTo });
 
   useEffect(() => {
     moodRef.current = mood;
   }, [mood]);
 
   useEffect(() => {
+    morphRef.current = { morphActive, bgT, morphFrom, morphTo };
+  }, [morphActive, bgT, morphFrom, morphTo]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
+    const overlay = overlayRef.current;
     if (!canvas) return;
 
     const engine = createEngine(theme.background.engine, tier, mood);
     engineRef.current = engine;
-    engine.init(canvas, theme, engineInitParams(theme, mood));
+    engine.init(canvas, theme, engineInitParams(theme, mood, tier));
 
     let currentVignette = 0;
     let currentDim = 1;
@@ -90,10 +105,11 @@ export function Background({
       const dt = lastT ? t - lastT : 0;
       lastT = t;
 
-      const alert = moodRef.current === "alert";
+      const m = moodRef.current;
+      const alert = m === "alert";
+      const focus = m === "focus";
       const targetVignette = alert ? 1 : 0;
-      const targetDim = moodRef.current === "sleep" ? 0.85 : 1;
-      // ~1200ms onset (§4.4 t3), scaled by theme motion speed
+      const targetDim = m === "sleep" ? 0.85 : focus ? 0.7 : 1;
       const onsetSec = 1.2 / (theme.motion.speed || 1);
       const rate = Math.min(1, dt / onsetSec);
       currentVignette += (targetVignette - currentVignette) * rate;
@@ -102,6 +118,17 @@ export function Background({
       engine.setVignette(currentVignette, theme.palette.negative);
       engine.dim(currentDim);
       engine.tick(t);
+
+      const { morphActive: morphing, bgT: bgMorph, morphFrom: from, morphTo: to } = morphRef.current;
+      if (overlay && overlayEngineRef.current && morphing && from && to && bgMorph > 0) {
+        overlayEngineRef.current.setVignette(currentVignette, to.palette.negative);
+        overlayEngineRef.current.dim(currentDim);
+        overlayEngineRef.current.tick(t);
+        overlay.style.opacity = String(bgMorph);
+      } else if (overlay) {
+        overlay.style.opacity = "0";
+      }
+
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -114,7 +141,10 @@ export function Background({
     };
     momentBus.addEventListener("moment", onMoment);
 
-    const resizeObserver = new ResizeObserver(() => engine.resize());
+    const resizeObserver = new ResizeObserver(() => {
+      engine.resize();
+      overlayEngineRef.current?.resize();
+    });
     resizeObserver.observe(canvas);
 
     return () => {
@@ -122,18 +152,60 @@ export function Background({
       resizeObserver.disconnect();
       momentBus.removeEventListener("moment", onMoment);
       engine.dispose();
+      overlayEngineRef.current?.dispose();
+      overlayEngineRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theme.background.engine, theme.background.preset, theme.motion.speed, theme.palette.bg0, theme.palette.accent1, theme.palette.accent2, theme.palette.negative, tier, mood]);
+  }, [
+    theme.background.engine,
+    theme.background.preset,
+    theme.motion.speed,
+    theme.palette.bg0,
+    theme.palette.accent1,
+    theme.palette.accent2,
+    theme.palette.negative,
+    tier,
+    mood,
+  ]);
+
+  // Overlay engine for theme-morph cross-fade (§4.2, §6.5)
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!overlay || !morphActive || !morphFrom || !morphTo) {
+      overlayEngineRef.current?.dispose();
+      overlayEngineRef.current = null;
+      return;
+    }
+
+    const engine = createEngine(morphTo.background.engine, tier, mood);
+    overlayEngineRef.current = engine;
+    engine.init(overlay, morphTo, engineInitParams(morphTo, mood, tier));
+    overlay.style.opacity = "0";
+
+    const ro = new ResizeObserver(() => engine.resize());
+    ro.observe(overlay);
+    return () => {
+      ro.disconnect();
+      engine.dispose();
+      if (overlayEngineRef.current === engine) overlayEngineRef.current = null;
+    };
+  }, [morphActive, morphFrom, morphTo, tier, mood]);
 
   return (
-    <canvas
-      // remount on engine/tier change: a canvas can't switch WebGL↔2D context type in place
-      key={`${tier}-${theme.background.engine}-${mood}`}
-      ref={canvasRef}
-      aria-hidden
-      className="pointer-events-none absolute inset-0 z-0 h-full w-full"
-      style={{ background: theme.palette.bg0 }}
-    />
+    <div className="pointer-events-none absolute inset-0 z-0 h-full w-full">
+      <canvas
+        key={`${tier}-${theme.background.engine}-${mood}`}
+        ref={canvasRef}
+        aria-hidden
+        className="absolute inset-0 h-full w-full"
+        style={{ background: theme.palette.bg0 }}
+      />
+      <canvas
+        ref={overlayRef}
+        aria-hidden
+        className="absolute inset-0 h-full w-full transition-opacity duration-75"
+        style={{ background: morphTo?.palette.bg0 ?? theme.palette.bg0, opacity: 0 }}
+      />
+    </div>
   );
 }

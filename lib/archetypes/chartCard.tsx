@@ -58,7 +58,7 @@ export function ChartCard({
         </div>
       </div>
       <div className="min-h-0 flex-1">
-        <Chart series={series} variant="area" />
+        <Chart series={series} variant="area" id={`chart-${label}`} />
       </div>
     </div>
   );

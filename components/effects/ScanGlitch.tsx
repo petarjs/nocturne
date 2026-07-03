@@ -2,33 +2,53 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { heartbeatBus } from "@/lib/heartbeat-events";
 
 const MIN_INTERVAL_MS = 120_000;
 
 /**
  * Noir mechanical signature (§4.3): a single-line scan glitch on the hero,
- * at most once per two minutes.
+ * at most once per two minutes — also triggerable via heartbeat flourish.
  */
-export function ScanGlitch({ enabled }: { enabled: boolean }) {
+export function ScanGlitch({
+  enabled,
+  widgetId,
+}: {
+  enabled: boolean;
+  widgetId: string;
+}) {
   const [active, setActive] = useState(false);
 
   useEffect(() => {
     if (!enabled) return;
 
     let timeout: ReturnType<typeof setTimeout>;
+
+    const trigger = () => {
+      setActive(true);
+      setTimeout(() => setActive(false), 140);
+    };
+
+    const onHeartbeat = (e: Event) => {
+      const detail = (e as CustomEvent<{ widgetId: string }>).detail;
+      if (detail.widgetId === widgetId) trigger();
+    };
+
+    heartbeatBus.addEventListener("scan-glitch", onHeartbeat);
+
     const schedule = () => {
       timeout = setTimeout(() => {
-        setActive(true);
-        setTimeout(() => {
-          setActive(false);
-          schedule();
-        }, 140);
+        trigger();
+        schedule();
       }, MIN_INTERVAL_MS + Math.random() * 20_000);
     };
 
     schedule();
-    return () => clearTimeout(timeout);
-  }, [enabled]);
+    return () => {
+      clearTimeout(timeout);
+      heartbeatBus.removeEventListener("scan-glitch", onHeartbeat);
+    };
+  }, [enabled, widgetId]);
 
   return (
     <AnimatePresence>

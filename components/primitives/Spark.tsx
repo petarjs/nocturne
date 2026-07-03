@@ -2,9 +2,10 @@
 
 import { motion } from "motion/react";
 import { useId, useMemo, useRef, useState, useEffect } from "react";
+import { idleCycleSec, idlePhase, IDLE } from "@/lib/idle";
+import { heartbeatBus } from "@/lib/heartbeat-events";
+import { useMotionPrefs } from "@/lib/motion-prefs";
 
-// The `spark` primitive (§7.1): a 60-point micro line, extends with a tip
-// pulse on update. Drawn, never appearing instantly (§2.1).
 export function Spark({
   points,
   width = 120,
@@ -12,18 +13,25 @@ export function Spark({
   color = "var(--n-accent1)",
   fill = false,
   className = "",
+  widgetId,
+  id = "spark",
 }: {
   points: number[];
   width?: number;
   height?: number;
   color?: string;
-  /** When true, sizes to the parent container (archetype slot geometry). */
   fill?: boolean;
   className?: string;
+  widgetId?: string;
+  id?: string;
 }) {
   const gradientId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width, height });
+  const [replayKey, setReplayKey] = useState(0);
+  const { reducedMotion } = useMotionPrefs();
+  const phase = idlePhase(id ?? widgetId ?? "spark");
+  const cycle = idleCycleSec(id ?? widgetId ?? "spark");
 
   useEffect(() => {
     if (!fill || !containerRef.current) return;
@@ -35,6 +43,16 @@ export function Spark({
     ro.observe(el);
     return () => ro.disconnect();
   }, [fill]);
+
+  useEffect(() => {
+    if (!widgetId) return;
+    const onReplay = (e: Event) => {
+      const detail = (e as CustomEvent<{ widgetId: string }>).detail;
+      if (detail.widgetId === widgetId) setReplayKey((k) => k + 1);
+    };
+    heartbeatBus.addEventListener("spark-replay", onReplay);
+    return () => heartbeatBus.removeEventListener("spark-replay", onReplay);
+  }, [widgetId]);
 
   const w = fill ? dims.width : width;
   const h = fill ? dims.height : height;
@@ -55,6 +73,10 @@ export function Spark({
 
   if (!path) return null;
 
+  const tipOpacity = reducedMotion
+    ? 1
+    : [1 - IDLE.opacityDelta, 1, 1 - IDLE.opacityDelta];
+
   const svg = (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible">
       <defs>
@@ -64,6 +86,7 @@ export function Spark({
         </linearGradient>
       </defs>
       <motion.path
+        key={replayKey}
         d={path}
         fill="none"
         stroke={`url(#${gradientId})`}
@@ -78,15 +101,25 @@ export function Spark({
         cy={tip[1]}
         r={2.5}
         fill={color}
-        animate={{ opacity: [1, 0.4, 1] }}
-        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ opacity: tipOpacity }}
+        transition={{
+          duration: cycle,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: phase % cycle,
+        }}
       />
     </svg>
   );
 
   if (fill) {
     return (
-      <div ref={containerRef} className={className}>
+      <div
+        ref={containerRef}
+        className={className}
+        data-has-spark="true"
+        data-widget-id={widgetId}
+      >
         {svg}
       </div>
     );

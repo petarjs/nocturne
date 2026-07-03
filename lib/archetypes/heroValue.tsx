@@ -13,6 +13,7 @@ export function HeroValue({
   unit,
   delta,
   spark,
+  widgetId,
 }: {
   slot: ArchetypeSlot;
   label: string;
@@ -20,6 +21,7 @@ export function HeroValue({
   unit?: string;
   delta?: number;
   spark?: number[];
+  widgetId?: string;
 }) {
   const pad = surfacePadForSlot[slot];
   const valueSize = valueSizeForSlot[slot];
@@ -52,7 +54,13 @@ export function HeroValue({
       </div>
       {showSpark && (
         <div className="flex min-h-0 flex-1 items-stretch pt-1">
-          <Spark points={spark} fill className="h-full min-h-[24px] w-full" />
+          <Spark
+            points={spark}
+            fill
+            className="h-full min-h-[24px] w-full"
+            widgetId={widgetId}
+            id={widgetId ? `${widgetId}-spark` : "spark"}
+          />
         </div>
       )}
     </div>

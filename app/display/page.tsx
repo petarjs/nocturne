@@ -18,7 +18,7 @@ import { parsePresetData } from "@/lib/schema/widget";
 import { useMotionPrefs } from "@/lib/motion-prefs";
 import { MotionDialectProvider } from "@/lib/motion-context";
 import { useActRotation } from "@/components/hooks/useActRotation";
-import { useMorphTheme } from "@/components/hooks/useMorphTheme";
+import { ThemeMorphProvider, useThemeMorph } from "@/lib/theme/morph-context";
 import { resolveActs } from "@/lib/layout/resolveActs";
 import { useDrawerOpen } from "@/lib/drawer/useDrawerOpen";
 import { useFps } from "@/lib/fps";
@@ -29,7 +29,7 @@ import { resolveTheme } from "@/lib/themes";
 
 function FallbackWidget({ widget }: { widget: Widget }) {
   return (
-    <div className="n-surface flex h-full w-full flex-col gap-2 p-6">
+    <div className="n-surface flex h-full w-full flex-col gap-2">
       <div className="n-label">{widget.title ?? widget.type}</div>
       <div className="n-data text-sm" style={{ color: "var(--n-text2)" }}>
         preset not wired yet
@@ -44,7 +44,14 @@ function renderWidget(widget: Widget, slot: WidgetSlot) {
       return <Clock slot={slot} />;
     case "stat": {
       const data = parsePresetData("stat", widget.data);
-      return <Stat {...data} slot={slot} label={widget.title ?? data.label} />;
+      return (
+        <Stat
+          {...data}
+          slot={slot}
+          label={widget.title ?? data.label}
+          widgetId={widget.id}
+        />
+      );
     }
     case "gauge": {
       const data = parsePresetData("gauge", widget.data);
@@ -78,13 +85,12 @@ function renderWidget(widget: Widget, slot: WidgetSlot) {
   }
 }
 
-// Display route: fully client-side, static-exportable (§9.1).
-export default function DisplayPage() {
+function DisplayContent() {
   const scene = useSceneStore((s) => s.scene);
   const lastUpdated = useSceneStore((s) => s.lastUpdated);
-  const theme = resolveTheme(scene.theme);
   const motion = useMotionPrefs();
-  const morphedTheme = useMorphTheme(theme, motion.reducedMotion);
+  const { theme: morphedTheme, morphActive, exitT, enterT, fromTheme, toTheme, bgT } =
+    useThemeMorph();
   const acts = resolveActs(scene.narrative, scene.widgets);
   const { open: drawerOpen } = useDrawerOpen();
   const fps = useFps(!drawerOpen);
@@ -105,15 +111,29 @@ export default function DisplayPage() {
     reducedMotion: motion.reducedMotion,
   });
 
-  useHeartbeat(scene.mood, act?.hero, motion.reducedMotion);
+  useHeartbeat(
+    scene.mood,
+    act?.hero,
+    morphedTheme.motion.dialect,
+    morphedTheme.background.engine,
+    motion.reducedMotion
+  );
   useStalenessWatcher(scene, lastUpdated);
 
   return (
-    <ThemeScope theme={morphedTheme}>
+    <ThemeScope theme={morphedTheme} tier={motion.tier}>
       <MotionDialectProvider dialect={morphedTheme.motion.dialect}>
         <div className="flex h-screen w-full overflow-hidden">
           <div className="relative isolate min-w-0 flex-1">
-            <Background theme={morphedTheme} mood={scene.mood} tier={motion.tier} />
+            <Background
+              theme={morphedTheme}
+              mood={scene.mood}
+              tier={motion.tier}
+              morphActive={morphActive}
+              morphFrom={fromTheme}
+              morphTo={toTheme}
+              bgT={bgT}
+            />
             <div className="relative z-10 flex h-full flex-col gap-6 p-12">
               <div className="n-label">
                 {scene.name} · {scene.mood} · tier {motion.tier}
@@ -129,6 +149,9 @@ export default function DisplayPage() {
                     theme={morphedTheme}
                     mood={scene.mood}
                     lastUpdated={lastUpdated}
+                    morphActive={morphActive}
+                    morphExitT={exitT}
+                    morphEnterT={enterT}
                     renderWidget={renderWidget}
                   />
                 )}
@@ -145,5 +168,18 @@ export default function DisplayPage() {
         </div>
       </MotionDialectProvider>
     </ThemeScope>
+  );
+}
+
+// Display route: fully client-side, static-exportable (§9.1).
+export default function DisplayPage() {
+  const scene = useSceneStore((s) => s.scene);
+  const theme = resolveTheme(scene.theme);
+  const motion = useMotionPrefs();
+
+  return (
+    <ThemeMorphProvider targetTheme={theme} reducedMotion={motion.reducedMotion}>
+      <DisplayContent />
+    </ThemeMorphProvider>
   );
 }

@@ -27,11 +27,12 @@ export const rainyTokyo: ThemeTokens = {
   },
   motion: {
     dialect: "chromatic",
-    speed: 1.1,
+    speed: 1.25,
   },
   background: {
     engine: "aurora",
     preset: "observatory",
+    params: { auroraBoost: 1.15 },
   },
   density: "airy",
 };

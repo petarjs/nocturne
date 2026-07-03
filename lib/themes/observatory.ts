@@ -25,7 +25,7 @@ export const observatory: ThemeTokens = {
   },
   motion: {
     dialect: "calm",
-    speed: 1,
+    speed: 1.12,
   },
   background: {
     engine: "aurora",

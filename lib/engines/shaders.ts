@@ -79,11 +79,11 @@ export const auroraFragmentShader = /* glsl */ `
     vec2 p = uv * 1.5;
     float t = uTime * uSpeed;
     float bend = pulseBend(uv);
-    vec2 warp = p + fbm(p + vec2(t * 0.06, -t * 0.04)) + vec2(bend, bend * 0.7);
-    float n = fbm(warp);
+    vec2 warp = p + fbm(p + vec2(t * 0.11, -t * 0.08)) + vec2(bend, bend * 0.7);
+    float n = fbm(warp + vec2(t * 0.025, t * 0.018));
 
     vec3 col = mix(uColorBg, uColorA, smoothstep(0.35, 0.75, n));
-    col = mix(col, uColorB, smoothstep(0.55, 0.95, fbm(p * 1.7 - t * 0.03)) * uAccent2Mix);
+    col = mix(col, uColorB, smoothstep(0.55, 0.95, fbm(p * 1.7 - t * 0.055)) * uAccent2Mix);
 
     float grain = (hash(uv * uRes + t) - 0.5) * 0.035;
     col += grain;

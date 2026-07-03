@@ -73,8 +73,15 @@ export function GaugeArc({
           <div ref={arcContainerRef} className="relative flex h-full max-h-full w-full max-w-[72px] items-center justify-center">
             {arcSize > 0 && (
               <>
-                <Arc fraction={fraction} size={arcSize} strokeWidth={strokeWidth} color={arcColor} zones={zones} />
-                <div className="absolute flex items-baseline">
+                <Arc
+                  fraction={fraction}
+                  size={arcSize}
+                  strokeWidth={strokeWidth}
+                  color={arcColor}
+                  zones={zones}
+                  id={`gauge-${label}`}
+                />
+                <div className="absolute z-10 flex items-baseline [text-shadow:0_1px_12px_rgba(0,0,0,0.55)]">
                   <Value value={value} decimals={0} fontSize={valueFontSize} />
                 </div>
               </>
@@ -97,8 +104,9 @@ export function GaugeArc({
               strokeWidth={strokeWidth}
               color={arcColor}
               zones={zones}
+              id={`gauge-${label}-hero`}
             />
-            <div className="absolute flex items-baseline gap-1">
+            <div className="absolute z-10 flex items-baseline gap-1 [text-shadow:0_1px_12px_rgba(0,0,0,0.55)]">
               <Value value={value} decimals={0} fontSize={valueFontSize} />
               <Unit style={{ fontSize: unitFontSize }}>{unit}</Unit>
             </div>

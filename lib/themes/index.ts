@@ -4,6 +4,7 @@ import { kanso } from "./kanso";
 import { noir } from "./noir";
 
 export { observatory, kanso, noir };
+export { fontFamilyVars, resolveFontVar } from "./fonts";
 
 export const themePresets: Record<string, ThemeTokens> = {
   observatory,

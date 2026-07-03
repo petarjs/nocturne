@@ -1,16 +1,25 @@
 "use client";
 
 import { motion } from "motion/react";
+import { idleCycleSec, idlePhase } from "@/lib/idle";
 
 type DotState = "up" | "down" | "degraded";
 
 const dotSize = { sm: "h-2 w-2", md: "h-2.5 w-2.5", lg: "h-3 w-3" } as const;
 
-// The `dot` primitive (§7.1): status point — scale flip on change, slow pulse
-// when degraded.
-export function Dot({ state, size = "sm" }: { state: DotState; size?: keyof typeof dotSize }) {
+export function Dot({
+  state,
+  size = "sm",
+  id = "dot",
+}: {
+  state: DotState;
+  size?: keyof typeof dotSize;
+  id?: string;
+}) {
   const color =
     state === "up" ? "var(--n-positive)" : state === "down" ? "var(--n-negative)" : "var(--n-accent1)";
+  const phase = idlePhase(id);
+  const cycle = idleCycleSec(id);
 
   return (
     <motion.span
@@ -24,7 +33,15 @@ export function Dot({ state, size = "sm" }: { state: DotState; size?: keyof type
       }}
       transition={
         state === "degraded"
-          ? { opacity: { duration: 2.4, repeat: Infinity, ease: "easeInOut" }, scaleX: { type: "spring", stiffness: 300, damping: 24 } }
+          ? {
+              opacity: {
+                duration: cycle,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: phase % cycle,
+              },
+              scaleX: { type: "spring", stiffness: 300, damping: 24 },
+            }
           : { type: "spring", stiffness: 300, damping: 24 }
       }
     />

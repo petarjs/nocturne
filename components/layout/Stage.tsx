@@ -8,13 +8,12 @@ import { resolveLayout } from "@/lib/layout/resolve";
 import { effectiveAct } from "@/lib/layout/alertPromotion";
 import { dialects, enterTransition, exitTransition } from "@/lib/dialects";
 import { momentBus, type MomentEvent } from "@/lib/moments/bus";
+import { MomentFlashProvider } from "@/lib/moment-flash-context";
 import { CalmParallax } from "@/components/effects/CalmParallax";
 import { ScanGlitch } from "@/components/effects/ScanGlitch";
 
 type Role = WidgetSlot;
 
-// widget opacity by mood + role (§4.5 focus, and the t3 "everything else
-// dims to 70%" rule folded in for alert since it's the same mechanism)
 function moodOpacity(mood: Mood, role: Role, state: Widget["state"]): number {
   if (state === "critical") return 1;
   if (mood === "alert") return 0.7;
@@ -23,15 +22,13 @@ function moodOpacity(mood: Mood, role: Role, state: Widget["state"]): number {
   return 1;
 }
 
-// transient flash from the moments bus (§4.4 t1/t2) — separate from the
-// widget's persistent `state` (attention/critical), which the reducer owns
 function useMomentFlashes() {
   const [flashes, setFlashes] = useState<Record<string, MomentEvent>>({});
 
   useEffect(() => {
     function onMoment(e: Event) {
       const detail = (e as CustomEvent<MomentEvent>).detail;
-      if (detail.tier === "t3") return; // t3 is sustained widget.state, not a flash
+      if (detail.tier === "t3") return;
       setFlashes((f) => ({ ...f, [detail.widgetId]: detail }));
       const duration = detail.tier === "t1" ? 400 : 900;
       setTimeout(() => {
@@ -50,9 +47,6 @@ function useMomentFlashes() {
   return flashes;
 }
 
-// a ticking clock for the "stale · Nm" chip — reading Date.now() directly in
-// render would be an impure render (and a hydration hazard); this samples it
-// on an interval instead, same pattern as the Clock widget.
 function useNow(intervalMs: number) {
   const [now, setNow] = useState(0);
   useEffect(() => {
@@ -64,11 +58,6 @@ function useNow(intervalMs: number) {
   return now;
 }
 
-// The stage: turns narrative roles into geometry (§6) and choreographs
-// every widget's enter/exit/travel through FLIP (§6.5). A widget present
-// before and after any change travels, resizes, and re-themes in place —
-// it never exits and re-enters (§2.1, §6.5). motion's `layout` prop is
-// the FLIP engine; this component just feeds it grid cells and variants.
 export function Stage({
   act,
   widgets,
@@ -76,6 +65,9 @@ export function Stage({
   theme,
   mood,
   lastUpdated,
+  morphActive = false,
+  morphExitT = 0,
+  morphEnterT = 0,
   renderWidget,
 }: {
   act: Act;
@@ -84,6 +76,9 @@ export function Stage({
   theme: ThemeTokens;
   mood: Mood;
   lastUpdated: Record<string, number>;
+  morphActive?: boolean;
+  morphExitT?: number;
+  morphEnterT?: number;
   renderWidget: (widget: Widget, slot: WidgetSlot) => React.ReactNode;
 }) {
   const resolvedAct = effectiveAct(act, mood, widgets);
@@ -91,8 +86,6 @@ export function Stage({
   const flashes = useMomentFlashes();
   const now = useNow(30_000);
 
-  // packing order (§6.2): role, then insertion order — this is also the
-  // stagger order for enter (§4.1: 60ms × primitive/widget order)
   const order = [resolvedAct.hero, ...resolvedAct.supporting, ...resolvedAct.ambient].filter(
     (id): id is string => !!id
   );
@@ -105,8 +98,6 @@ export function Stage({
 
   const visibleIds = visible.map((w) => w.id);
 
-  // Enter runs only for widgets not on screen last frame (§6.5). Re-applying
-  // `initial` on theme/mood/layout change left blur stuck on survivors.
   const prevVisibleRef = useRef<string[] | null>(null);
   const isInitialMount = prevVisibleRef.current === null;
 
@@ -115,6 +106,10 @@ export function Stage({
   }, [visibleIds]);
 
   const shape = dialects[dialect];
+
+  const morphExitScale = morphActive ? 1 - morphExitT * 0.04 : 1;
+  const morphExitOpacity = morphActive ? 1 - morphExitT * 0.15 : 1;
+  const morphEnterLift = morphActive ? morphEnterT * 0.08 : 0;
 
   return (
     <div
@@ -132,8 +127,12 @@ export function Stage({
           const critical = widget.state === "critical";
           const attention = widget.state === "attention";
           const stale = widget.state === "stale";
-          const glowColor = flash?.accent === "negative" ? theme.palette.negative : theme.palette.accent1;
-          const staleMinutes = Math.max(1, Math.round((now - (lastUpdated[widget.id] ?? now)) / 60_000));
+          const glowColor =
+            flash?.accent === "negative" ? theme.palette.negative : theme.palette.accent1;
+          const staleMinutes = Math.max(
+            1,
+            Math.round((now - (lastUpdated[widget.id] ?? now)) / 60_000)
+          );
 
           const role = roleOf(widget.id);
           const isHero = role === "hero";
@@ -152,8 +151,14 @@ export function Stage({
               initial={skipEnter ? false : shape.enterFrom}
               animate={
                 skipEnter
-                  ? { opacity: 1, y: 0, scale: 1, clipPath: "none", filter: "none" }
-                  : shape.enterTo
+                  ? {
+                      opacity: morphExitOpacity,
+                      y: morphEnterLift * -12,
+                      scale: morphExitScale,
+                      clipPath: "none",
+                      filter: "none",
+                    }
+                  : { ...shape.enterTo, opacity: morphExitOpacity, scale: morphExitScale }
               }
               exit={{ ...shape.exitTo, transition: exitTransition }}
               transition={
@@ -182,8 +187,13 @@ export function Stage({
                     damping: mood === "alert" && !critical ? 28 : 22,
                   }}
                 >
-                  {renderWidget(widget, role)}
-                  <ScanGlitch enabled={dialect === "mechanical" && isHero} />
+                  <MomentFlashProvider flash={flash}>
+                    {renderWidget(widget, role)}
+                  </MomentFlashProvider>
+                  <ScanGlitch
+                    enabled={dialect === "mechanical" && isHero}
+                    widgetId={widget.id}
+                  />
                   {stale && (
                     <div className="n-label absolute right-4 top-4 rounded-full bg-black/30 px-2 py-0.5">
                       stale · {staleMinutes}m

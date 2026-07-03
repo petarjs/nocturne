@@ -10,13 +10,21 @@ type Particle = {
   phase: number;
   rot: number;
   rotSpeed: number;
+  layer: number;
+  brightness: number;
 };
 
 type Preset = "starfield" | "petals" | "motes";
 
+const STARFIELD_LAYERS = [
+  { sizeMin: 0.4, sizeMax: 1.0, brightness: 0.45, drift: 0.6 },
+  { sizeMin: 0.8, sizeMax: 1.6, brightness: 0.7, drift: 1.0 },
+  { sizeMin: 1.2, sizeMax: 2.4, brightness: 1.0, drift: 1.4 },
+];
+
 /**
- * Canvas particle system (§5.4). Presets: starfield (sleep/universal),
- * petals (Kanso interim until growth engine ships), motes (Requiem).
+ * Canvas particle system (§5.4). Presets: starfield (900 pts, 3 parallax layers),
+ * petals (≤120), motes (Requiem).
  */
 export class ParticlesEngine implements BackgroundEngine {
   minTier: 1 | 2 | 3 = 2;
@@ -26,6 +34,7 @@ export class ParticlesEngine implements BackgroundEngine {
   private theme?: ThemeTokens;
   private preset: Preset = "petals";
   private particles: Particle[] = [];
+  private tier: 1 | 2 | 3 = 3;
   private vignette = 0;
   private vignetteColor = "#000000";
   private dimAmount = 1;
@@ -35,15 +44,22 @@ export class ParticlesEngine implements BackgroundEngine {
     this.canvas = canvas;
     this.theme = theme;
     this.ctx = canvas.getContext("2d");
+    this.tier = (params.tier as 1 | 2 | 3) ?? 3;
     this.preset =
       (params.preset as Preset) ?? (theme.background.preset as Preset) ?? "petals";
     this.spawnParticles();
     this.resize();
   }
 
+  private particleCount(): number {
+    const tierScale = this.tier <= 2 ? 0.5 : 1;
+    if (this.preset === "starfield") return Math.round(900 * tierScale);
+    if (this.preset === "motes") return Math.round(60 * tierScale);
+    return Math.round(55 * tierScale);
+  }
+
   private spawnParticles() {
-    const count =
-      this.preset === "starfield" ? 280 : this.preset === "motes" ? 60 : 90;
+    const count = this.particleCount();
     this.particles = Array.from({ length: count }, () => this.makeParticle(true));
   }
 
@@ -52,15 +68,21 @@ export class ParticlesEngine implements BackgroundEngine {
     const h = this.canvas?.clientHeight ?? 1080;
 
     if (this.preset === "starfield") {
+      const layerIdx = Math.floor(Math.random() * STARFIELD_LAYERS.length);
+      const layer = STARFIELD_LAYERS[layerIdx];
+      const driftPxPerMin = 2 * layer.drift;
+      const driftPerFrame = driftPxPerMin / 60 / 60;
       return {
         x: Math.random() * w,
         y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.08,
-        vy: Math.random() * 0.04 + 0.01,
-        size: Math.random() * 1.8 + 0.6,
+        vx: (Math.random() - 0.5) * driftPerFrame * 0.3,
+        vy: driftPerFrame * (0.5 + Math.random() * 0.5),
+        size: layer.sizeMin + Math.random() * (layer.sizeMax - layer.sizeMin),
         phase: Math.random() * Math.PI * 2,
         rot: 0,
         rotSpeed: 0,
+        layer: layerIdx,
+        brightness: layer.brightness,
       };
     }
 
@@ -74,19 +96,22 @@ export class ParticlesEngine implements BackgroundEngine {
         phase: Math.random() * Math.PI * 2,
         rot: 0,
         rotSpeed: 0,
+        layer: 0,
+        brightness: 1,
       };
     }
 
-    // petals — flutter down from above (Kanso interim)
     return {
       x: Math.random() * w,
       y: randomY ? Math.random() * h : -20 - Math.random() * h * 0.3,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: Math.random() * 0.35 + 0.25,
-      size: Math.random() * 7 + 5,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: Math.random() * 0.25 + 0.18,
+      size: Math.random() * 4 + 3,
       phase: Math.random() * Math.PI * 2,
       rot: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.02,
+      rotSpeed: (Math.random() - 0.5) * 0.015,
+      layer: 0,
+      brightness: 0.45 + Math.random() * 0.25,
     };
   }
 
@@ -104,9 +129,9 @@ export class ParticlesEngine implements BackgroundEngine {
     ctx.fillStyle = theme.palette.bg0;
     ctx.fillRect(0, 0, w, h);
 
-    // soft wash using accent2 at low opacity
     const wash = ctx.createRadialGradient(w * 0.5, h * 0.3, 0, w * 0.5, h * 0.5, w * 0.7);
-    wash.addColorStop(0, hexToRgba(theme.palette.accent2, 0.06));
+    const washAlpha = this.preset === "petals" ? 0.02 : 0.06;
+    wash.addColorStop(0, hexToRgba(theme.palette.accent2, washAlpha));
     wash.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = wash;
     ctx.fillRect(0, 0, w, h);
@@ -114,7 +139,12 @@ export class ParticlesEngine implements BackgroundEngine {
     this.pulseImpulses.forEach((p) => (p.age += 1 / 60));
     this.pulseImpulses = this.pulseImpulses.filter((p) => p.age < 2);
 
-    for (const p of this.particles) {
+    const sorted =
+      this.preset === "starfield"
+        ? [...this.particles].sort((a, b) => a.layer - b.layer)
+        : this.particles;
+
+    for (const p of sorted) {
       const flutter =
         this.preset === "petals" ? Math.sin(t * 1.8 + p.phase) * 0.4 : 0;
       p.x += (p.vx + flutter) * scaleX;
@@ -139,13 +169,13 @@ export class ParticlesEngine implements BackgroundEngine {
       this.drawParticle(ctx, p, t, theme);
     }
 
-    // mandatory grain (§2.3 rule 9)
     ctx.globalAlpha = 0.035;
     for (let i = 0; i < 800; i++) {
       const gx = Math.random() * w;
       const gy = Math.random() * h;
       const g = (Math.random() - 0.5) * 255;
-      ctx.fillStyle = g > 0 ? `rgba(255,255,255,${Math.abs(g) / 255})` : `rgba(0,0,0,${Math.abs(g) / 255})`;
+      ctx.fillStyle =
+        g > 0 ? `rgba(255,255,255,${Math.abs(g) / 255})` : `rgba(0,0,0,${Math.abs(g) / 255})`;
       ctx.fillRect(gx, gy, 1, 1);
     }
     ctx.globalAlpha = 1;
@@ -165,9 +195,16 @@ export class ParticlesEngine implements BackgroundEngine {
     }
   }
 
-  private drawParticle(ctx: CanvasRenderingContext2D, p: Particle, t: number, theme: ThemeTokens) {
+  private drawParticle(
+    ctx: CanvasRenderingContext2D,
+    p: Particle,
+    t: number,
+    theme: ThemeTokens
+  ) {
     const twinkle =
-      this.preset === "starfield" ? 0.45 + 0.55 * Math.sin(t * 2 + p.phase) : 1;
+      this.preset === "starfield"
+        ? 0.35 + 0.65 * Math.sin(t * (1.2 + p.layer * 0.4) + p.phase)
+        : 1;
     const color =
       this.preset === "petals"
         ? theme.palette.accent1
@@ -178,7 +215,10 @@ export class ParticlesEngine implements BackgroundEngine {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(p.rot);
-    ctx.globalAlpha = twinkle * (this.preset === "motes" ? 0.35 : 0.75);
+    ctx.globalAlpha =
+      twinkle *
+      p.brightness *
+      (this.preset === "motes" ? 0.35 : this.preset === "starfield" ? 0.85 : 0.38);
 
     if (this.preset === "petals") {
       ctx.fillStyle = color;
@@ -217,6 +257,10 @@ export class ParticlesEngine implements BackgroundEngine {
   setParams(p: EngineParams) {
     if (typeof p.preset === "string") {
       this.preset = p.preset as Preset;
+      this.spawnParticles();
+    }
+    if (typeof p.tier === "number") {
+      this.tier = p.tier as 1 | 2 | 3;
       this.spawnParticles();
     }
   }
