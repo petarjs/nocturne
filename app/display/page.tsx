@@ -11,11 +11,15 @@ import { Timeseries } from "@/components/widgets/Timeseries";
 import { StatusGrid } from "@/components/widgets/StatusGrid";
 import { List } from "@/components/widgets/List";
 import { Headline } from "@/components/widgets/Headline";
+import { ActIndicator } from "@/components/display/ActIndicator";
 import type { Widget } from "@/lib/schema";
 import type { WidgetSlot } from "@/lib/layout/types";
 import { parsePresetData } from "@/lib/schema/widget";
 import { useMotionPrefs } from "@/lib/motion-prefs";
 import { MotionDialectProvider } from "@/lib/motion-context";
+import { useActRotation } from "@/components/hooks/useActRotation";
+import { useMorphTheme } from "@/components/hooks/useMorphTheme";
+import { resolveActs } from "@/lib/layout/resolveActs";
 import { useDrawerOpen } from "@/lib/drawer/useDrawerOpen";
 import { useFps } from "@/lib/fps";
 import { useHeartbeat } from "@/lib/heartbeat";
@@ -79,23 +83,41 @@ export default function DisplayPage() {
   const scene = useSceneStore((s) => s.scene);
   const lastUpdated = useSceneStore((s) => s.lastUpdated);
   const theme = resolveTheme(scene.theme);
-  const act = scene.narrative.acts[0];
   const motion = useMotionPrefs();
+  const morphedTheme = useMorphTheme(theme, motion.reducedMotion);
+  const acts = resolveActs(scene.narrative, scene.widgets);
   const { open: drawerOpen } = useDrawerOpen();
   const fps = useFps(!drawerOpen);
+
+  const {
+    currentAct: act,
+    actIndex,
+    actCount,
+    dwellProgress,
+    indicatorVisible,
+    indicatorPulse,
+    rotationEnabled,
+  } = useActRotation({
+    acts,
+    rotation: scene.narrative.rotation,
+    mood: scene.mood,
+    widgets: scene.widgets,
+    reducedMotion: motion.reducedMotion,
+  });
 
   useHeartbeat(scene.mood, act?.hero, motion.reducedMotion);
   useStalenessWatcher(scene, lastUpdated);
 
   return (
-    <ThemeScope theme={theme}>
-      <MotionDialectProvider dialect={theme.motion.dialect}>
+    <ThemeScope theme={morphedTheme}>
+      <MotionDialectProvider dialect={morphedTheme.motion.dialect}>
         <div className="flex h-screen w-full overflow-hidden">
           <div className="relative isolate min-w-0 flex-1">
-            <Background theme={theme} mood={scene.mood} tier={motion.tier} />
+            <Background theme={morphedTheme} mood={scene.mood} tier={motion.tier} />
             <div className="relative z-10 flex h-full flex-col gap-6 p-12">
               <div className="n-label">
                 {scene.name} · {scene.mood} · tier {motion.tier}
+                {rotationEnabled ? ` · act ${actIndex + 1}/${actCount}` : ""}
                 {motion.reducedMotion ? " · reduced motion" : ""}
               </div>
               <div className="min-h-0 flex-1">
@@ -103,8 +125,8 @@ export default function DisplayPage() {
                   <Stage
                     act={act}
                     widgets={scene.widgets}
-                    dialect={theme.motion.dialect}
-                    theme={theme}
+                    dialect={morphedTheme.motion.dialect}
+                    theme={morphedTheme}
                     mood={scene.mood}
                     lastUpdated={lastUpdated}
                     renderWidget={renderWidget}
@@ -117,6 +139,7 @@ export default function DisplayPage() {
                 {fps} fps · ` control
               </div>
             )}
+            {indicatorVisible && <ActIndicator progress={dwellProgress} pulse={indicatorPulse} />}
           </div>
           {drawerOpen && <ControlDrawer motion={motion} />}
         </div>

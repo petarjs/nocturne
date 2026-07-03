@@ -11,6 +11,7 @@ import { vibePresets } from "@/lib/vibe-presets";
 import { momentBus } from "@/lib/moments/bus";
 import { isMetricWidget } from "@/lib/moments/evaluate";
 import { setWidgetRole, widgetRole, type WidgetRole } from "@/lib/drawer/narrative";
+import { resolveActs } from "@/lib/layout/resolveActs";
 import { useChaosEngine } from "@/lib/drawer/useChaos";
 import { useFps } from "@/lib/fps";
 import type { MotionPrefs } from "@/lib/motion-prefs";
@@ -63,6 +64,7 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
   const applyOp = useSceneStore((s) => s.applyOp);
   const applyOps = useSceneStore((s) => s.applyOps);
   const act = scene.narrative.acts[0];
+  const resolvedActCount = resolveActs(scene.narrative, scene.widgets).length;
 
   const [selectedId, setSelectedId] = useState<string | null>(scene.widgets[0]?.id ?? null);
   const [chaos, setChaos] = useState(false);
@@ -223,22 +225,30 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
 
         {act && (
           <Section title="Narrative">
-            <label className="flex items-center gap-2 text-xs text-[var(--n-text2)]">
-              <input
-                type="checkbox"
-                checked={scene.narrative.rotation.mode !== "off"}
-                onChange={(e) =>
-                  applyOp({
-                    type: "setRotation",
-                    rotation: {
-                      ...scene.narrative.rotation,
-                      mode: e.target.checked ? "auto" : "off",
-                    },
-                  })
-                }
-              />
-              act rotation
-            </label>
+            <div className="flex flex-wrap gap-1">
+              {(["off", "auto", "story"] as const).map((mode) => (
+                <Btn
+                  key={mode}
+                  active={scene.narrative.rotation.mode === mode}
+                  onClick={() =>
+                    applyOp({
+                      type: "setRotation",
+                      rotation: {
+                        ...scene.narrative.rotation,
+                        mode,
+                        indicator: mode === "off" ? "none" : "hairline",
+                      },
+                    })
+                  }
+                >
+                  {mode}
+                </Btn>
+              ))}
+            </div>
+            <div className="text-xs text-[var(--n-text2)]">
+              {resolvedActCount} act{resolvedActCount === 1 ? "" : "s"}
+              {scene.narrative.rotation.mode !== "off" ? ` · ${scene.narrative.rotation.dwellSec}s dwell` : ""}
+            </div>
             <div className="flex max-h-36 flex-col gap-1 overflow-y-auto">
               {scene.widgets.map((w) => (
                 <div key={w.id} className="flex items-center gap-2 text-xs">
