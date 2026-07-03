@@ -8,6 +8,8 @@ export function viewportScale(height: number): number {
 export const TYPE_SCALE = {
   label: 13,
   meta: 14,
+  body: 16,
+  headline: 56,
   "value-s": 28,
   "value-m": 44,
   "value-l": 76,

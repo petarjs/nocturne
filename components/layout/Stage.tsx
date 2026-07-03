@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { Act, Mood, MotionDialect, ThemeTokens, Widget } from "@/lib/schema";
 import type { WidgetSlot } from "@/lib/layout/types";
@@ -8,6 +8,8 @@ import { resolveLayout } from "@/lib/layout/resolve";
 import { effectiveAct } from "@/lib/layout/alertPromotion";
 import { dialects, enterTransition, exitTransition } from "@/lib/dialects";
 import { momentBus, type MomentEvent } from "@/lib/moments/bus";
+import { CalmParallax } from "@/components/effects/CalmParallax";
+import { ScanGlitch } from "@/components/effects/ScanGlitch";
 
 type Role = WidgetSlot;
 
@@ -101,6 +103,17 @@ export function Stage({
     .map((id) => widgets.find((w) => w.id === id))
     .filter((w): w is Widget => !!w && !!layout[w.id]);
 
+  const visibleIds = visible.map((w) => w.id);
+
+  // Enter runs only for widgets not on screen last frame (§6.5). Re-applying
+  // `initial` on theme/mood/layout change left blur stuck on survivors.
+  const prevVisibleRef = useRef<string[] | null>(null);
+  const isInitialMount = prevVisibleRef.current === null;
+
+  useEffect(() => {
+    prevVisibleRef.current = visibleIds;
+  }, [visibleIds]);
+
   const shape = dialects[dialect];
 
   return (
@@ -122,6 +135,10 @@ export function Stage({
           const glowColor = flash?.accent === "negative" ? theme.palette.negative : theme.palette.accent1;
           const staleMinutes = Math.max(1, Math.round((now - (lastUpdated[widget.id] ?? now)) / 60_000));
 
+          const role = roleOf(widget.id);
+          const isHero = role === "hero";
+          const skipEnter = !isInitialMount && (prevVisibleRef.current?.includes(widget.id) ?? false);
+
           return (
             <motion.div
               key={widget.id}
@@ -132,36 +149,48 @@ export function Stage({
                 gridColumn: `${cell.col + 1} / span ${cell.colSpan}`,
                 gridRow: `${cell.row + 1} / span ${cell.rowSpan}`,
               }}
-              initial={shape.enterFrom}
-              animate={{ ...shape.enterTo, transition: enterTransition(dialect, i) }}
+              initial={skipEnter ? false : shape.enterFrom}
+              animate={
+                skipEnter
+                  ? { opacity: 1, y: 0, scale: 1, clipPath: "none", filter: "none" }
+                  : shape.enterTo
+              }
               exit={{ ...shape.exitTo, transition: exitTransition }}
+              transition={
+                skipEnter
+                  ? { layout: { type: "spring", stiffness: 260, damping: 28 } }
+                  : enterTransition(dialect, i)
+              }
             >
-              <motion.div
-                data-widget-id={widget.id}
-                className="relative h-full w-full rounded-[var(--n-radius)]"
-                animate={{
-                  scale: flash || attention ? 1.02 : critical ? 1.02 : 1,
-                  opacity: moodOpacity(mood, roleOf(widget.id), widget.state),
-                  filter: stale ? "saturate(0.6)" : "saturate(1)",
-                  boxShadow: critical
-                    ? `0 0 48px ${theme.palette.negative}55`
-                    : flash
-                      ? `0 0 32px ${glowColor}55`
-                      : "0 0 0 rgba(0,0,0,0)",
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: mood === "alert" && !critical ? 80 : 260,
-                  damping: mood === "alert" && !critical ? 28 : 22,
-                }}
-              >
-                {renderWidget(widget, roleOf(widget.id))}
-                {stale && (
-                  <div className="n-label absolute right-4 top-4 rounded-full bg-black/30 px-2 py-0.5">
-                    stale · {staleMinutes}m
-                  </div>
-                )}
-              </motion.div>
+              <CalmParallax id={widget.id} role={role} dialect={dialect} className="h-full w-full">
+                <motion.div
+                  data-widget-id={widget.id}
+                  className="relative h-full w-full rounded-[var(--n-radius)]"
+                  animate={{
+                    scale: flash || attention ? 1.02 : critical ? 1.02 : 1,
+                    opacity: moodOpacity(mood, role, widget.state),
+                    filter: stale ? "saturate(0.6)" : "saturate(1)",
+                    boxShadow: critical
+                      ? `0 0 48px ${theme.palette.negative}55`
+                      : flash
+                        ? `0 0 32px ${glowColor}55`
+                        : "0 0 0 rgba(0,0,0,0)",
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: mood === "alert" && !critical ? 80 : 260,
+                    damping: mood === "alert" && !critical ? 28 : 22,
+                  }}
+                >
+                  {renderWidget(widget, role)}
+                  <ScanGlitch enabled={dialect === "mechanical" && isHero} />
+                  {stale && (
+                    <div className="n-label absolute right-4 top-4 rounded-full bg-black/30 px-2 py-0.5">
+                      stale · {staleMinutes}m
+                    </div>
+                  )}
+                </motion.div>
+              </CalmParallax>
             </motion.div>
           );
         })}

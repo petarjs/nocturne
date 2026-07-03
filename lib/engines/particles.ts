@@ -35,7 +35,8 @@ export class ParticlesEngine implements BackgroundEngine {
     this.canvas = canvas;
     this.theme = theme;
     this.ctx = canvas.getContext("2d");
-    this.preset = (theme.background.preset as Preset) ?? (params.preset as Preset) ?? "petals";
+    this.preset =
+      (params.preset as Preset) ?? (theme.background.preset as Preset) ?? "petals";
     this.spawnParticles();
     this.resize();
   }

@@ -10,10 +10,12 @@ import { Gauge } from "@/components/widgets/Gauge";
 import { Timeseries } from "@/components/widgets/Timeseries";
 import { StatusGrid } from "@/components/widgets/StatusGrid";
 import { List } from "@/components/widgets/List";
+import { Headline } from "@/components/widgets/Headline";
 import type { Widget } from "@/lib/schema";
 import type { WidgetSlot } from "@/lib/layout/types";
 import { parsePresetData } from "@/lib/schema/widget";
 import { useMotionPrefs } from "@/lib/motion-prefs";
+import { MotionDialectProvider } from "@/lib/motion-context";
 import { useDrawerOpen } from "@/lib/drawer/useDrawerOpen";
 import { useFps } from "@/lib/fps";
 import { useHeartbeat } from "@/lib/heartbeat";
@@ -63,6 +65,10 @@ function renderWidget(widget: Widget, slot: WidgetSlot) {
       const data = parsePresetData("list", widget.data);
       return <List label={widget.title} items={data.items} slot={slot} />;
     }
+    case "headline": {
+      const data = parsePresetData("headline", widget.data);
+      return <Headline slot={slot} text={data.text} kicker={data.kicker} tone={data.tone} />;
+    }
     default:
       return <FallbackWidget widget={widget} />;
   }
@@ -83,36 +89,38 @@ export default function DisplayPage() {
 
   return (
     <ThemeScope theme={theme}>
-      <div className="flex h-screen w-full overflow-hidden">
-        <div className="relative isolate min-w-0 flex-1">
-          <Background theme={theme} mood={scene.mood} tier={motion.tier} />
-          <div className="relative z-10 flex h-full flex-col gap-6 p-12">
-            <div className="n-label">
-              {scene.name} · {scene.mood} · tier {motion.tier}
-              {motion.reducedMotion ? " · reduced motion" : ""}
+      <MotionDialectProvider dialect={theme.motion.dialect}>
+        <div className="flex h-screen w-full overflow-hidden">
+          <div className="relative isolate min-w-0 flex-1">
+            <Background theme={theme} mood={scene.mood} tier={motion.tier} />
+            <div className="relative z-10 flex h-full flex-col gap-6 p-12">
+              <div className="n-label">
+                {scene.name} · {scene.mood} · tier {motion.tier}
+                {motion.reducedMotion ? " · reduced motion" : ""}
+              </div>
+              <div className="min-h-0 flex-1">
+                {act && (
+                  <Stage
+                    act={act}
+                    widgets={scene.widgets}
+                    dialect={theme.motion.dialect}
+                    theme={theme}
+                    mood={scene.mood}
+                    lastUpdated={lastUpdated}
+                    renderWidget={renderWidget}
+                  />
+                )}
+              </div>
             </div>
-            <div className="min-h-0 flex-1">
-              {act && (
-                <Stage
-                  act={act}
-                  widgets={scene.widgets}
-                  dialect={theme.motion.dialect}
-                  theme={theme}
-                  mood={scene.mood}
-                  lastUpdated={lastUpdated}
-                  renderWidget={renderWidget}
-                />
-              )}
-            </div>
+            {!drawerOpen && (
+              <div className="n-label pointer-events-none absolute bottom-4 right-4 opacity-40">
+                {fps} fps · ` control
+              </div>
+            )}
           </div>
-          {!drawerOpen && (
-            <div className="n-label pointer-events-none absolute bottom-4 right-4 opacity-40">
-              {fps} fps · ` control
-            </div>
-          )}
+          {drawerOpen && <ControlDrawer motion={motion} />}
         </div>
-        {drawerOpen && <ControlDrawer motion={motion} />}
-      </div>
+      </MotionDialectProvider>
     </ThemeScope>
   );
 }

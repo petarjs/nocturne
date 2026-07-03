@@ -6,15 +6,19 @@ import { AuroraEngine } from "@/lib/engines/aurora";
 import { FlatEngine } from "@/lib/engines/flat";
 import { GridHorizonEngine } from "@/lib/engines/gridHorizon";
 import { ParticlesEngine } from "@/lib/engines/particles";
-import type { BackgroundEngine } from "@/lib/engines/types";
+import type { BackgroundEngine, EngineParams } from "@/lib/engines/types";
 import { momentBus, type MomentEvent } from "@/lib/moments/bus";
 import { HEARTBEAT_CENTER_ID } from "@/lib/heartbeat";
 
 function createEngine(
   engineName: ThemeTokens["background"]["engine"],
-  tier: 1 | 2 | 3
+  tier: 1 | 2 | 3,
+  mood: Mood
 ): BackgroundEngine {
   if (tier >= 2) {
+    // sleep mood: universal starfield tinted by theme (§4.5)
+    if (mood === "sleep") return new ParticlesEngine();
+
     switch (engineName) {
       case "aurora":
         return new AuroraEngine();
@@ -29,8 +33,15 @@ function createEngine(
         return new FlatEngine();
     }
   }
-  // tier 1: every theme maps to `flat` with its own palette (§4.7, §5.1)
   return new FlatEngine();
+}
+
+function engineInitParams(theme: ThemeTokens, mood: Mood): EngineParams {
+  if (mood === "sleep") return { preset: "starfield" };
+  if (theme.background.engine === "growth") {
+    return { preset: "petals", ...(theme.background.params ?? {}) };
+  }
+  return theme.background.params ?? {};
 }
 
 function widgetCenterNdc(widgetId: string): [number, number] | null {
@@ -64,9 +75,9 @@ export function Background({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const engine = createEngine(theme.background.engine, tier);
+    const engine = createEngine(theme.background.engine, tier, mood);
     engineRef.current = engine;
-    engine.init(canvas, theme, theme.background.params ?? {});
+    engine.init(canvas, theme, engineInitParams(theme, mood));
 
     let currentVignette = 0;
     let currentDim = 1;
@@ -113,12 +124,12 @@ export function Background({
       engine.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theme.background.engine, theme.background.preset, theme.motion.speed, theme.palette.bg0, theme.palette.accent1, theme.palette.accent2, theme.palette.negative, tier]);
+  }, [theme.background.engine, theme.background.preset, theme.motion.speed, theme.palette.bg0, theme.palette.accent1, theme.palette.accent2, theme.palette.negative, tier, mood]);
 
   return (
     <canvas
       // remount on engine/tier change: a canvas can't switch WebGL↔2D context type in place
-      key={`${tier}-${theme.background.engine}`}
+      key={`${tier}-${theme.background.engine}-${mood}`}
       ref={canvasRef}
       aria-hidden
       className="pointer-events-none absolute inset-0 z-0 h-full w-full"

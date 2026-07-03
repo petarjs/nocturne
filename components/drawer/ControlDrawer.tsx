@@ -16,7 +16,7 @@ import { useFps } from "@/lib/fps";
 import type { MotionPrefs } from "@/lib/motion-prefs";
 
 const MOODS: Mood[] = ["ambient", "focus", "alert", "sleep"];
-const ADDABLE: PresetType[] = ["stat", "gauge", "timeseries", "statusGrid", "list", "clock"];
+const ADDABLE: PresetType[] = ["stat", "gauge", "timeseries", "statusGrid", "list", "clock", "headline"];
 const MOMENT_TIERS = ["t1", "t2", "t3"] as const;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

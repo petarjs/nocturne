@@ -28,6 +28,7 @@ export function ThemeScope({ theme, children }: { theme: ThemeTokens; children: 
     ["--n-value-m" as string]: `${Math.round(TYPE_SCALE["value-m"] * vpScale)}px`,
     ["--n-value-l" as string]: `${Math.round(TYPE_SCALE["value-l"] * vpScale)}px`,
     ["--n-value-hero" as string]: `${Math.round(TYPE_SCALE["value-hero"] * vpScale)}px`,
+    ["--n-headline-size" as string]: `${Math.round(TYPE_SCALE.headline * vpScale)}px`,
     color: theme.palette.text1,
   };
 
