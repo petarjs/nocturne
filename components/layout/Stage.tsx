@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import type { Act, Mood, MotionDialect, ThemeTokens, Widget } from "@/lib/schema";
 import type { WidgetSlot } from "@/lib/layout/types";
 import { resolveLayout } from "@/lib/layout/resolve";
+import { effectiveAct } from "@/lib/layout/alertPromotion";
 import { dialects, enterTransition, exitTransition } from "@/lib/dialects";
 import { momentBus, type MomentEvent } from "@/lib/moments/bus";
 
@@ -83,17 +84,18 @@ export function Stage({
   lastUpdated: Record<string, number>;
   renderWidget: (widget: Widget, slot: WidgetSlot) => React.ReactNode;
 }) {
-  const layout = resolveLayout(act, "landscape");
+  const resolvedAct = effectiveAct(act, mood, widgets);
+  const layout = resolveLayout(resolvedAct, "landscape");
   const flashes = useMomentFlashes();
   const now = useNow(30_000);
 
   // packing order (§6.2): role, then insertion order — this is also the
   // stagger order for enter (§4.1: 60ms × primitive/widget order)
-  const order = [act.hero, ...act.supporting, ...act.ambient].filter(
+  const order = [resolvedAct.hero, ...resolvedAct.supporting, ...resolvedAct.ambient].filter(
     (id): id is string => !!id
   );
   const roleOf = (id: string): Role =>
-    id === act.hero ? "hero" : act.supporting.includes(id) ? "supporting" : "ambient";
+    id === resolvedAct.hero ? "hero" : resolvedAct.supporting.includes(id) ? "supporting" : "ambient";
 
   const visible = order
     .map((id) => widgets.find((w) => w.id === id))
@@ -147,7 +149,11 @@ export function Stage({
                       ? `0 0 32px ${glowColor}55`
                       : "0 0 0 rgba(0,0,0,0)",
                 }}
-                transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                transition={{
+                  type: "spring",
+                  stiffness: mood === "alert" && !critical ? 80 : 260,
+                  damping: mood === "alert" && !critical ? 28 : 22,
+                }}
               >
                 {renderWidget(widget, roleOf(widget.id))}
                 {stale && (

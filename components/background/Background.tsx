@@ -74,8 +74,9 @@ export function Background({
       const alert = moodRef.current === "alert";
       const targetVignette = alert ? 1 : 0;
       const targetDim = moodRef.current === "sleep" ? 0.85 : 1;
-      // ~1200ms onset (§4.4 t3), frame-rate independent approach to target
-      const rate = Math.min(1, dt / 1.2);
+      // ~1200ms onset (§4.4 t3), scaled by theme motion speed
+      const onsetSec = 1.2 / (theme.motion.speed || 1);
+      const rate = Math.min(1, dt / onsetSec);
       currentVignette += (targetVignette - currentVignette) * rate;
       currentDim += (targetDim - currentDim) * rate;
 
@@ -88,9 +89,9 @@ export function Background({
 
     const onMoment = (e: Event) => {
       const detail = (e as CustomEvent<MomentEvent>).detail;
-      if (detail.tier !== "t2") return;
+      if (detail.tier !== "t2" && detail.tier !== "t3") return;
       const ndc = widgetCenterNdc(detail.widgetId);
-      if (ndc) engine.pulse(ndc, 0.6);
+      if (ndc) engine.pulse(ndc, detail.tier === "t3" ? 0.85 : 0.6);
     };
     momentBus.addEventListener("moment", onMoment);
 
@@ -104,7 +105,7 @@ export function Background({
       engine.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theme.background.engine, theme.palette.bg0, theme.palette.accent1, theme.palette.accent2, tier]);
+  }, [theme.background.engine, theme.background.preset, theme.motion.speed, theme.palette.bg0, theme.palette.accent1, theme.palette.accent2, theme.palette.negative, tier]);
 
   return (
     <canvas

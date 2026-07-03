@@ -38,19 +38,26 @@ function renderWidget(widget: Widget, slot: WidgetSlot) {
       return <Clock slot={slot} />;
     case "stat": {
       const data = parsePresetData("stat", widget.data);
-      return <Stat {...data} label={widget.title ?? data.label} />;
+      return <Stat {...data} slot={slot} label={widget.title ?? data.label} />;
     }
     case "gauge": {
       const data = parsePresetData("gauge", widget.data);
-      return <Gauge {...data} label={widget.title ?? data.label} />;
+      return <Gauge {...data} slot={slot} label={widget.title ?? data.label} />;
     }
     case "timeseries": {
       const data = parsePresetData("timeseries", widget.data);
-      return <Timeseries {...data} label={widget.title ?? data.label} />;
+      return <Timeseries {...data} slot={slot} label={widget.title ?? data.label} />;
     }
     case "statusGrid": {
       const data = parsePresetData("statusGrid", widget.data);
-      return <StatusGrid label={widget.title} items={data.items} slot={slot} />;
+      return (
+        <StatusGrid
+          label={widget.title}
+          items={data.items}
+          slot={slot}
+          critical={widget.state === "critical"}
+        />
+      );
     }
     case "list": {
       const data = parsePresetData("list", widget.data);

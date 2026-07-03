@@ -46,9 +46,33 @@ export function evaluateMoment(widget: Widget, prevData: unknown, nextData: unkn
     return "t0";
   }
 
+  if (widget.type === "statusGrid") {
+    const prev = parsePresetData("statusGrid", prevData);
+    const patch = nextData as { items?: typeof prev.items };
+    const nextItems = patch.items ?? prev.items;
+    const hadDown = prev.items.some((i) => i.state === "down");
+    const hasDown = nextItems.some((i) => i.state === "down");
+    if (!hadDown && hasDown) return "t3";
+    if (hadDown && !hasDown) return "t2";
+    return "t0";
+  }
+
   return "t0";
 }
 
 export function isMetricWidget(type: Widget["type"]): type is PresetType {
-  return type === "stat" || type === "gauge" || type === "timeseries";
+  return type === "stat" || type === "gauge" || type === "timeseries" || type === "statusGrid";
+}
+
+/** Whether a widget's alert condition is still active (§4.4 sustained t3). */
+export function hasActiveAlertCondition(widget: Widget, data: unknown): boolean {
+  if (widget.type === "statusGrid") {
+    const d = parsePresetData("statusGrid", data);
+    return d.items.some((i) => i.state === "down");
+  }
+  if (widget.type === "gauge") {
+    const d = parsePresetData("gauge", data);
+    return d.crit !== undefined && d.value >= d.crit;
+  }
+  return false;
 }

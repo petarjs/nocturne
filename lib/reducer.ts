@@ -102,7 +102,8 @@ export function reduce(scene: Scene, op: Op, deps: ReducerDeps = {}): Scene {
       return updateWidgetById(scene, op.id, (w) => ({
         ...w,
         data: mergeWidgetData(w.data, op.data),
-        state: "normal",
+        // critical/attention persist until condition clears (§4.4 sustained t3)
+        state: w.state === "critical" || w.state === "attention" ? w.state : "normal",
       }));
 
     default: {

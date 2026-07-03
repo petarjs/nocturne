@@ -13,7 +13,7 @@ export const homelabScene: Scene = {
       {
         hero: "cpu",
         supporting: ["memory", "network"],
-        ambient: ["clock", "services", "library"],
+        ambient: ["clock", "services"],
       },
     ],
     rotation: { mode: "off", dwellSec: 20, indicator: "none" },
@@ -47,13 +47,6 @@ export const homelabScene: Scene = {
       type: "statusGrid",
       title: "Services",
       data: fixtures.statusGrid,
-      state: "normal",
-    },
-    {
-      id: "library",
-      type: "list",
-      title: "Continue Watching",
-      data: fixtures.list,
       state: "normal",
     },
   ],
