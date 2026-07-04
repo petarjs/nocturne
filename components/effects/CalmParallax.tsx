@@ -41,10 +41,13 @@ export function CalmParallax({
     const start = performance.now();
     let raf = 0;
 
+    // Periods ~15s/19s (was ~57s/74s): slow enough to read as "calm," fast
+    // enough that hero/supporting/ambient layers visibly drift apart within a
+    // 5s window — the calm dialect's Motion Turing tell (§4.3, criterion 6).
     const tick = (now: number) => {
       const t = (now - start) / 1000;
-      x.set(Math.sin(t * 0.11 + phase) * amp);
-      y.set(Math.cos(t * 0.085 + phase * 0.7) * amp * 0.65);
+      x.set(Math.sin(t * 0.42 + phase) * amp);
+      y.set(Math.cos(t * 0.33 + phase * 0.7) * amp * 0.65);
       raf = requestAnimationFrame(tick);
     };
 

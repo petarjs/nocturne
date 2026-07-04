@@ -28,6 +28,8 @@ export class AuroraEngine implements BackgroundEngine {
   private theme?: ThemeTokens;
 
   init(canvas: HTMLCanvasElement, theme: ThemeTokens, _params: EngineParams) {
+    if (this.renderer) this.releaseGpu();
+
     this.canvas = canvas;
     this.theme = theme;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
@@ -38,6 +40,26 @@ export class AuroraEngine implements BackgroundEngine {
 
     this.buildMaterial(theme);
     this.resize();
+  }
+
+  syncTheme(theme: ThemeTokens) {
+    this.theme = theme;
+    if (!this.material) return;
+
+    const preset = theme.background.preset ?? "default";
+    const boost =
+      typeof theme.background.params?.auroraBoost === "number"
+        ? theme.background.params.auroraBoost
+        : 1;
+    const accent2Mix = preset === "observatory" ? 0.3 : 1;
+    const u = this.material.uniforms;
+
+    u.uSpeed.value = (preset === "smoke" ? 0.012 : 0.038) * (theme.motion.speed || 1) * boost;
+    u.uColorBg.value.copy(colorToVec3(theme.palette.bg0));
+    u.uColorA.value.copy(colorToVec3(theme.palette.accent1));
+    u.uColorB.value.copy(colorToVec3(theme.palette.accent2));
+    u.uVignetteColor.value.copy(colorToVec3(theme.palette.negative));
+    u.uAccent2Mix.value = accent2Mix;
   }
 
   private buildMaterial(theme: ThemeTokens) {
@@ -140,12 +162,17 @@ export class AuroraEngine implements BackgroundEngine {
     this.material.uniforms.uRes.value.set(clientWidth, clientHeight);
   }
 
+  private releaseGpu() {
+    this.material?.dispose();
+    this.renderer?.dispose();
+    this.material = undefined;
+    this.renderer = undefined;
+  }
+
   dispose() {
     this.canvas?.removeEventListener("webglcontextlost", this.contextLostHandler);
     this.canvas?.removeEventListener("webglcontextrestored", this.contextRestoredHandler);
-    this.material?.dispose();
-    this.renderer?.dispose();
-    this.renderer?.forceContextLoss();
-    this.renderer = undefined;
+    this.releaseGpu();
+    this.canvas = undefined;
   }
 }

@@ -18,7 +18,8 @@ function moodOpacity(mood: Mood, role: Role, state: Widget["state"]): number {
   if (state === "critical") return 1;
   if (mood === "alert") return 0.7;
   if (mood === "focus") return role === "hero" ? 1 : role === "supporting" ? 0.8 : 0.5;
-  if (mood === "sleep") return role === "hero" ? 1 : 0.3;
+  // sleep no longer dims survivors to ghosts — effectiveAct reduces the act to
+  // the clock alone, so every other widget exits via AnimatePresence (§1.3 beat 6).
   return 1;
 }
 
@@ -61,6 +62,7 @@ function useNow(intervalMs: number) {
 export function Stage({
   act,
   widgets,
+  anchors = [],
   dialect,
   theme,
   mood,
@@ -72,6 +74,7 @@ export function Stage({
 }: {
   act: Act;
   widgets: Widget[];
+  anchors?: string[];
   dialect: MotionDialect;
   theme: ThemeTokens;
   mood: Mood;
@@ -81,7 +84,7 @@ export function Stage({
   morphEnterT?: number;
   renderWidget: (widget: Widget, slot: WidgetSlot) => React.ReactNode;
 }) {
-  const resolvedAct = effectiveAct(act, mood, widgets);
+  const resolvedAct = effectiveAct(act, mood, widgets, anchors);
   const layout = resolveLayout(resolvedAct, "landscape");
   const flashes = useMomentFlashes();
   const now = useNow(30_000);
@@ -127,8 +130,13 @@ export function Stage({
           const critical = widget.state === "critical";
           const attention = widget.state === "attention";
           const stale = widget.state === "stale";
+          // §8 / §2.3 rule 4: the one per-widget style override. Remapped onto
+          // --n-accent1 for the widget subtree so surface glow and data viz pick
+          // it up; falls back to the theme's accent1.
+          const widgetAccent =
+            widget.accent === "accent2" ? theme.palette.accent2 : theme.palette.accent1;
           const glowColor =
-            flash?.accent === "negative" ? theme.palette.negative : theme.palette.accent1;
+            flash?.accent === "negative" ? theme.palette.negative : widgetAccent;
           const staleMinutes = Math.max(
             1,
             Math.round((now - (lastUpdated[widget.id] ?? now)) / 60_000)
@@ -171,6 +179,7 @@ export function Stage({
                 <motion.div
                   data-widget-id={widget.id}
                   className="relative h-full w-full rounded-[var(--n-radius)]"
+                  style={{ ["--n-accent1" as string]: widgetAccent }}
                   animate={{
                     scale: flash || attention ? 1.02 : critical ? 1.02 : 1,
                     opacity: moodOpacity(mood, role, widget.state),
@@ -195,7 +204,7 @@ export function Stage({
                     widgetId={widget.id}
                   />
                   {stale && (
-                    <div className="n-label absolute right-4 top-4 rounded-full bg-black/30 px-2 py-0.5">
+                    <div className="n-label absolute right-3 top-3 rounded-full border border-white/[0.06] bg-black/25 px-2 py-0.5 text-[11px] opacity-70 backdrop-blur-sm">
                       stale · {staleMinutes}m
                     </div>
                   )}

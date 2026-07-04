@@ -15,8 +15,11 @@ export function Delta({ value, unit = "%" }: { value: number; unit?: string }) {
         initial={{ opacity: 0, y: positive ? 4 : -4, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="n-data inline-flex items-center gap-1 text-[14px]"
-        style={{ color }}
+        className="n-data inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[14px] leading-none"
+        style={{
+          color,
+          backgroundColor: `color-mix(in srgb, ${color} 16%, transparent)`,
+        }}
       >
         {positive ? "▲" : "▼"} {Math.abs(value).toFixed(1)}
         {unit}

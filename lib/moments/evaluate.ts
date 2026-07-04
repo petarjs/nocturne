@@ -40,6 +40,16 @@ export function evaluateMoment(widget: Widget, prevData: unknown, nextData: unkn
     const next = { ...prev, ...(nextData as object) };
     const prevLast = prev.series.at(-1)?.v ?? 0;
     const nextLast = next.series.at(-1)?.v ?? prevLast;
+
+    // §4.4 default: a new point ≥ 3σ off the rolling window is an event (t2).
+    const window = prev.series.map((p) => p.v);
+    if (window.length >= 8) {
+      const mean = window.reduce((a, b) => a + b, 0) / window.length;
+      const variance = window.reduce((a, b) => a + (b - mean) ** 2, 0) / window.length;
+      const std = Math.sqrt(variance);
+      if (std > 1e-6 && Math.abs(nextLast - mean) / std >= 3) return "t2";
+    }
+
     const change = pctDelta(prevLast, nextLast);
     if (change >= 25) return "t2";
     if (change >= 10) return "t1";

@@ -29,6 +29,8 @@ export class GridHorizonEngine implements BackgroundEngine {
   private theme?: ThemeTokens;
 
   init(canvas: HTMLCanvasElement, theme: ThemeTokens, _params: EngineParams) {
+    if (this.renderer) this.releaseGpu();
+
     this.canvas = canvas;
     this.theme = theme;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
@@ -39,6 +41,26 @@ export class GridHorizonEngine implements BackgroundEngine {
 
     this.buildMaterial(theme);
     this.resize();
+  }
+
+  syncTheme(theme: ThemeTokens) {
+    this.theme = theme;
+    if (!this.material) return;
+
+    const preset = theme.background.preset ?? "default";
+    const isSunset = preset === "sunset";
+    const u = this.material.uniforms;
+
+    u.uColorBg.value.copy(colorToVec3(theme.palette.bg0));
+    u.uColorGrid.value.copy(colorToVec3(theme.palette.accent1));
+    u.uColorFog.value.copy(colorToVec3(theme.palette.bg1));
+    u.uColorSky.value.copy(colorToVec3(theme.palette.text2));
+    u.uVignetteColor.value.copy(colorToVec3(theme.palette.negative));
+    u.uSunColorA.value.copy(colorToVec3(theme.palette.accent1));
+    u.uSunColorB.value.copy(colorToVec3(theme.palette.accent2));
+    u.uDensity.value = isSunset ? 5.0 : 4.0;
+    u.uFog.value = isSunset ? 2.2 : 3.5;
+    u.uSunset.value = isSunset ? 1 : 0;
   }
 
   private buildMaterial(theme: ThemeTokens) {
@@ -136,12 +158,17 @@ export class GridHorizonEngine implements BackgroundEngine {
     this.material.uniforms.uRes.value.set(clientWidth, clientHeight);
   }
 
+  private releaseGpu() {
+    this.material?.dispose();
+    this.renderer?.dispose();
+    this.material = undefined;
+    this.renderer = undefined;
+  }
+
   dispose() {
     this.canvas?.removeEventListener("webglcontextlost", this.contextLostHandler);
     this.canvas?.removeEventListener("webglcontextrestored", this.contextRestoredHandler);
-    this.material?.dispose();
-    this.renderer?.dispose();
-    this.renderer?.forceContextLoss();
-    this.renderer = undefined;
+    this.releaseGpu();
+    this.canvas = undefined;
   }
 }

@@ -13,6 +13,13 @@
 # testing
 /coverage
 
+# playwright (golden frames) — reference snapshots ARE committed; only the
+# per-run artifacts and diffs are ignored
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # next.js
 /.next/
 /out/

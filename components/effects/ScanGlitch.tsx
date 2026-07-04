@@ -6,9 +6,15 @@ import { heartbeatBus } from "@/lib/heartbeat-events";
 
 const MIN_INTERVAL_MS = 120_000;
 
+// Shared across instances and remounts (e.g. when the hero changes) so the
+// §4.3 "≥120s apart" invariant holds globally, not per component. The heartbeat
+// (§4.6) is the sole scheduler; this component only reacts and enforces spacing.
+let lastFiredAt = -Infinity;
+
 /**
  * Noir mechanical signature (§4.3): a single-line scan glitch on the hero,
- * at most once per two minutes — also triggerable via heartbeat flourish.
+ * at most once per two minutes. Fired only by the heartbeat flourish (§4.6);
+ * no self-scheduler, so two sources can never collide.
  */
 export function ScanGlitch({
   enabled,
@@ -22,32 +28,18 @@ export function ScanGlitch({
   useEffect(() => {
     if (!enabled) return;
 
-    let timeout: ReturnType<typeof setTimeout>;
-
-    const trigger = () => {
+    const onHeartbeat = (e: Event) => {
+      const detail = (e as CustomEvent<{ widgetId: string }>).detail;
+      if (detail.widgetId !== widgetId) return;
+      const now = performance.now();
+      if (now - lastFiredAt < MIN_INTERVAL_MS) return;
+      lastFiredAt = now;
       setActive(true);
       setTimeout(() => setActive(false), 140);
     };
 
-    const onHeartbeat = (e: Event) => {
-      const detail = (e as CustomEvent<{ widgetId: string }>).detail;
-      if (detail.widgetId === widgetId) trigger();
-    };
-
     heartbeatBus.addEventListener("scan-glitch", onHeartbeat);
-
-    const schedule = () => {
-      timeout = setTimeout(() => {
-        trigger();
-        schedule();
-      }, MIN_INTERVAL_MS + Math.random() * 20_000);
-    };
-
-    schedule();
-    return () => {
-      clearTimeout(timeout);
-      heartbeatBus.removeEventListener("scan-glitch", onHeartbeat);
-    };
+    return () => heartbeatBus.removeEventListener("scan-glitch", onHeartbeat);
   }, [enabled, widgetId]);
 
   return (

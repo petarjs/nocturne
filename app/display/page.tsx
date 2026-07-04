@@ -25,6 +25,8 @@ import { useFps } from "@/lib/fps";
 import { useHeartbeat } from "@/lib/heartbeat";
 import { useStalenessWatcher } from "@/lib/staleness";
 import { useSceneStore } from "@/lib/store";
+import { useUrlSceneBootstrap } from "@/lib/display/urlBootstrap";
+import { useDevOpsSync } from "@/lib/display/devOpsSync";
 import { resolveTheme } from "@/lib/themes";
 
 function FallbackWidget({ widget }: { widget: Widget }) {
@@ -145,6 +147,7 @@ function DisplayContent() {
                   <Stage
                     act={act}
                     widgets={scene.widgets}
+                    anchors={scene.narrative.anchors ?? []}
                     dialect={morphedTheme.motion.dialect}
                     theme={morphedTheme}
                     mood={scene.mood}
@@ -173,6 +176,8 @@ function DisplayContent() {
 
 // Display route: fully client-side, static-exportable (§9.1).
 export default function DisplayPage() {
+  useUrlSceneBootstrap();
+  useDevOpsSync();
   const scene = useSceneStore((s) => s.scene);
   const theme = resolveTheme(scene.theme);
   const motion = useMotionPrefs();

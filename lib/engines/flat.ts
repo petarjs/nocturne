@@ -19,11 +19,15 @@ export class FlatEngine implements BackgroundEngine {
   private dimAmount = 1;
   private grain?: ImageData;
 
-  init(canvas: HTMLCanvasElement, theme: ThemeTokens) {
+  init(canvas: HTMLCanvasElement, theme: ThemeTokens, _params?: EngineParams) {
     this.canvas = canvas;
     this.theme = theme;
     this.ctx = canvas.getContext("2d");
     this.resize();
+  }
+
+  syncTheme(theme: ThemeTokens) {
+    this.theme = theme;
   }
 
   setParams(_p: EngineParams) {}

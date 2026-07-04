@@ -9,6 +9,7 @@ import { fixtureFor } from "@/fixtures";
 import { themePresets } from "@/lib/themes";
 import { vibePresets } from "@/lib/vibe-presets";
 import { momentBus } from "@/lib/moments/bus";
+import { setGrowthHour } from "@/lib/engines/growthBus";
 import { isMetricWidget } from "@/lib/moments/evaluate";
 import { setWidgetRole, widgetRole, type WidgetRole } from "@/lib/drawer/narrative";
 import { resolveActs } from "@/lib/layout/resolveActs";
@@ -19,6 +20,13 @@ import type { MotionPrefs } from "@/lib/motion-prefs";
 const MOODS: Mood[] = ["ambient", "focus", "alert", "sleep"];
 const ADDABLE: PresetType[] = ["stat", "gauge", "timeseries", "statusGrid", "list", "clock", "headline"];
 const MOMENT_TIERS = ["t1", "t2", "t3"] as const;
+
+function growthPhase(h: number): string {
+  if (h >= 5 && h < 9) return "dawn";
+  if (h >= 9 && h < 17) return "day";
+  if (h >= 17 && h < 20) return "dusk";
+  return "night";
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -72,6 +80,10 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
   const [addType, setAddType] = useState<PresetType>("stat");
   const [valueInput, setValueInput] = useState("");
   const [vibeText, setVibeText] = useState("");
+  const [growthHour, setGrowthHourState] = useState<number | null>(null);
+
+  const growthActive =
+    "palette" in scene.theme && scene.theme.background.engine === "growth";
 
   const fps = useFps(true);
   const selected = scene.widgets.find((w) => w.id === selectedId) ?? null;
@@ -379,6 +391,42 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
             Tier 3 = aurora shader. Tier 1–2 = flat fallback (§4.7).
           </p>
         </Section>
+
+        {growthActive && (
+          <Section title="Growth (Kanso branch)">
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0}
+                max={23}
+                value={growthHour ?? new Date().getHours()}
+                onChange={(e) => {
+                  const h = Number(e.target.value);
+                  setGrowthHourState(h);
+                  setGrowthHour(h);
+                }}
+                className="flex-1 accent-[var(--n-accent1)]"
+              />
+              <span className="n-data w-16 text-right text-xs tabular-nums text-[var(--n-text1)]">
+                {growthHour === null
+                  ? "live"
+                  : `${String(growthHour).padStart(2, "0")}:00 · ${growthPhase(growthHour)}`}
+              </span>
+            </div>
+            <Btn
+              active={growthHour === null}
+              onClick={() => {
+                setGrowthHourState(null);
+                setGrowthHour(null);
+              }}
+            >
+              follow local time
+            </Btn>
+            <p className="text-[11px] text-[var(--n-text2)]/70">
+              Dawn spurt · day bloom · dusk fall · night bare + moon (§5.6).
+            </p>
+          </Section>
+        )}
       </div>
     </aside>
   );

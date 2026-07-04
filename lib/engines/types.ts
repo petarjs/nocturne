@@ -9,6 +9,8 @@ export type EngineParams = Record<string, number | string>;
  */
 export interface BackgroundEngine {
   init(canvas: HTMLCanvasElement, theme: ThemeTokens, params: EngineParams): void;
+  /** Update palette-driven uniforms without tearing down the WebGL/canvas context. */
+  syncTheme(theme: ThemeTokens): void;
   tick(t: number): void;
   /** moment ripple, NDC origin (-1..1), ≤4 concurrent (§4.4) */
   pulse(originNdc: [number, number], strength: number): void;

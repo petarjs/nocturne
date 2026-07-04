@@ -7,7 +7,8 @@ export function resolveActs(narrative: Narrative, widgets: Widget[]): Act[] {
   const anchors = narrative.anchors ?? [];
 
   if (narrative.rotation.mode === "auto") {
-    return generateAutoActs(widgetIds, anchors);
+    const pinnedIds = widgets.filter((w) => w.pinned).map((w) => w.id);
+    return generateAutoActs(widgetIds, anchors, pinnedIds);
   }
 
   return narrative.acts.length > 0 ? narrative.acts : [{ supporting: [], ambient: anchors }];

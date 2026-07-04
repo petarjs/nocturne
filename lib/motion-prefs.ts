@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { type EffectTier, getStoredTier, setStoredTier, useEffectTier } from "./tiers";
+import { urlRequestsStill } from "./display/urlBootstrap";
 
 const SIM_KEY = "nocturne:simulate-reduced-motion";
 
@@ -28,11 +29,13 @@ export function useMotionPrefs() {
   const { tier, setTier } = useEffectTier();
   const [osReduced, setOsReduced] = useState(false);
   const [simulateReduced, setSimulateReducedState] = useState(false);
+  const [stillMode, setStillMode] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from matchMedia
     setOsReduced(detectReducedMotion());
     setSimulateReducedState(getSimulatedReduced());
+    setStillMode(urlRequestsStill());
 
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onChange = () => setOsReduced(mq.matches);
@@ -48,7 +51,7 @@ export function useMotionPrefs() {
   return {
     tier,
     setTier,
-    reducedMotion: osReduced || simulateReduced,
+    reducedMotion: osReduced || simulateReduced || stillMode,
     simulateReduced,
     setSimulateReduced,
     getStoredTier,

@@ -51,6 +51,10 @@ export class ParticlesEngine implements BackgroundEngine {
     this.resize();
   }
 
+  syncTheme(theme: ThemeTokens) {
+    this.theme = theme;
+  }
+
   private particleCount(): number {
     const tierScale = this.tier <= 2 ? 0.5 : 1;
     if (this.preset === "starfield") return Math.round(900 * tierScale);
