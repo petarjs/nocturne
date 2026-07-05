@@ -82,8 +82,12 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
   const [vibeText, setVibeText] = useState("");
   const [growthHour, setGrowthHourState] = useState<number | null>(null);
 
-  const growthActive =
-    "palette" in scene.theme && scene.theme.background.engine === "growth";
+  const bgEngine = "palette" in scene.theme ? scene.theme.background.engine : null;
+  const bgParams = "palette" in scene.theme ? scene.theme.background.params : undefined;
+  // growth and meadow both live on local time; the scrubber drives either
+  const timeActive = bgEngine === "growth" || bgEngine === "meadow";
+  const meadowActive = bgEngine === "meadow";
+  const weather = (bgParams?.weather as string | undefined) ?? "auto";
 
   const fps = useFps(true);
   const selected = scene.widgets.find((w) => w.id === selectedId) ?? null;
@@ -392,8 +396,8 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
           </p>
         </Section>
 
-        {growthActive && (
-          <Section title="Growth (Kanso branch)">
+        {timeActive && (
+          <Section title="Time of day">
             <div className="flex items-center gap-2">
               <input
                 type="range"
@@ -423,7 +427,34 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
               follow local time
             </Btn>
             <p className="text-[11px] text-[var(--n-text2)]/70">
-              Dawn spurt · day bloom · dusk fall · night bare + moon (§5.6).
+              {meadowActive
+                ? "Night stars + moon · dawn sun · day clouds & birds · golden dusk."
+                : "Dawn spurt · day bloom · dusk fall · night bare + moon (§5.6)."}
+            </p>
+          </Section>
+        )}
+
+        {meadowActive && (
+          <Section title="Weather">
+            <div className="flex flex-wrap gap-1">
+              {(["auto", "clear", "rain", "storm"] as const).map((w) => (
+                <Btn
+                  key={w}
+                  active={weather === w}
+                  onClick={() =>
+                    applyOp({
+                      type: "setBackground",
+                      engine: "meadow",
+                      params: w === "auto" ? {} : { weather: w },
+                    })
+                  }
+                >
+                  {w}
+                </Btn>
+              ))}
+            </div>
+            <p className="text-[11px] text-[var(--n-text2)]/70">
+              auto follows mood — alert rolls in the storm (§4.5).
             </p>
           </Section>
         )}

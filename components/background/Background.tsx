@@ -95,6 +95,8 @@ export function Background({
 
   useEffect(() => {
     moodRef.current = mood;
+    // engines that model weather (meadow) react to mood directly (§5.1)
+    engineRef.current?.setMood(mood);
   }, [mood]);
 
   useEffect(() => {
@@ -116,6 +118,8 @@ export function Background({
       engineRef.current = fallback;
       fallback.init(canvas, theme, engineInitParams(theme, tier));
     }
+    // a remount mid-alert must come back stormy, not calm
+    engineRef.current.setMood(moodRef.current);
 
     // Sleep starfield lives on its own overlay canvas so entering/leaving sleep
     // is a cross-fade, not an engine remount (§1.3 beat 6). Ticked only while
