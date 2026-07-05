@@ -2,14 +2,16 @@ import type { ThemeTokens } from "@/lib/schema";
 import { observatory } from "./observatory";
 import { kanso } from "./kanso";
 import { noir } from "./noir";
+import { meadow } from "./meadow";
 
-export { observatory, kanso, noir };
+export { observatory, kanso, noir, meadow };
 export { fontFamilyVars, resolveFontVar } from "./fonts";
 
 export const themePresets: Record<string, ThemeTokens> = {
   observatory,
   kanso,
   noir,
+  meadow,
 };
 
 export function resolveTheme(theme: ThemeTokens | { preset: string }): ThemeTokens {

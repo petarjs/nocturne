@@ -6,6 +6,7 @@ import { AuroraEngine } from "@/lib/engines/aurora";
 import { FlatEngine } from "@/lib/engines/flat";
 import { GridHorizonEngine } from "@/lib/engines/gridHorizon";
 import { GrowthEngine } from "@/lib/engines/growth";
+import { MeadowEngine } from "@/lib/engines/meadow";
 import { ParticlesEngine } from "@/lib/engines/particles";
 import type { BackgroundEngine, EngineParams } from "@/lib/engines/types";
 import { momentBus, type MomentEvent } from "@/lib/moments/bus";
@@ -27,6 +28,8 @@ function createEngine(
         return new GridHorizonEngine();
       case "particles":
         return new ParticlesEngine();
+      case "meadow":
+        return new MeadowEngine();
       case "growth":
         // §5.6 splurge. Revert this single case to `new ParticlesEngine()` for
         // the pre-authorized petals-only fallback if the beauty gate fails.
