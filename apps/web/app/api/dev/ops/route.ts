@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { opsBatchSchema } from "@/lib/schema";
-import { reduceBatch } from "@/lib/reducer";
-import { homelabScene, scenePresets } from "@/fixtures/scenes";
+import { opsBatchSchema } from "@nocturne/core";
+import { reduceBatch } from "@nocturne/core";
+import { homelabScene, scenePresets } from "@nocturne/core/fixtures";
 
 // Dev-only route: preserves the curl one-liner demo (§9.1) before the real
 // Durable Object spine exists. Module-level state — not for production use.

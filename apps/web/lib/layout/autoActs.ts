@@ -1,4 +1,4 @@
-import type { Act } from "@/lib/schema";
+import type { Act } from "@nocturne/core";
 
 const SUPPORTING_MAX = 4;
 const AMBIENT_MAX = 4;

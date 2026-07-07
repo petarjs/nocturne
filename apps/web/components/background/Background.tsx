@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { ThemeTokens, Mood } from "@/lib/schema";
+import type { ThemeTokens, Mood } from "@nocturne/core";
 import { AuroraEngine } from "@/lib/engines/aurora";
 import { BorealisEngine } from "@/lib/engines/borealis";
 import { FlatEngine } from "@/lib/engines/flat";

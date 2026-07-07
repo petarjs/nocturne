@@ -1,5 +1,5 @@
-import type { Act } from "@/lib/schema";
-import type { Mood, Widget } from "@/lib/schema";
+import type { Act } from "@nocturne/core";
+import type { Mood, Widget } from "@nocturne/core";
 
 /**
  * §4.4 t3: promote the affected widget toward hero position — a motivated

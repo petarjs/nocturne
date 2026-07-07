@@ -1,4 +1,4 @@
-import type { Act } from "@/lib/schema";
+import type { Act } from "@nocturne/core";
 import type { GridCell, LayoutResult, Orientation } from "./types";
 
 const COLS = 12;

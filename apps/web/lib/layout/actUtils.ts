@@ -1,4 +1,4 @@
-import type { Act } from "@/lib/schema";
+import type { Act } from "@nocturne/core";
 
 export function actHasWidget(act: Act, widgetId: string): boolean {
   return act.hero === widgetId || act.supporting.includes(widgetId) || act.ambient.includes(widgetId);

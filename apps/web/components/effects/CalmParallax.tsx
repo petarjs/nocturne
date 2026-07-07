@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { motion, useMotionValue } from "motion/react";
-import type { MotionDialect } from "@/lib/schema";
+import type { MotionDialect } from "@nocturne/core";
 import type { WidgetSlot } from "@/lib/layout/types";
 
 function parallaxAmplitude(role: WidgetSlot): number {

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import type { Widget } from "@/lib/schema";
-import type { Op } from "@/lib/schema";
+import type { Widget } from "@nocturne/core";
+import type { Op } from "@nocturne/core";
 import { chaosTick, randomWalkTick } from "@/lib/chaos";
 import { isMetricWidget } from "@/lib/moments/evaluate";
 

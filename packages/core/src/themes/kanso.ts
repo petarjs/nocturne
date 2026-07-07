@@ -1,4 +1,4 @@
-import type { ThemeTokens } from "@/lib/schema";
+import type { ThemeTokens } from "../schema";
 
 export const kanso: ThemeTokens = {
   id: "kanso",

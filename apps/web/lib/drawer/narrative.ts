@@ -1,4 +1,4 @@
-import type { Act } from "@/lib/schema";
+import type { Act } from "@nocturne/core";
 
 export type WidgetRole = "hero" | "supporting" | "ambient" | "off";
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import type { Act, Mood, MotionDialect, ThemeTokens, Widget } from "@/lib/schema";
+import type { Act, Mood, MotionDialect, ThemeTokens, Widget } from "@nocturne/core";
 import type { WidgetSlot } from "@/lib/layout/types";
 import { resolveLayout } from "@/lib/layout/resolve";
 import { effectiveAct } from "@/lib/layout/alertPromotion";

@@ -1,4 +1,4 @@
-import type { ThemeTokens, Mood } from "@/lib/schema";
+import type { ThemeTokens, Mood } from "@nocturne/core";
 
 export type EngineParams = Record<string, number | string>;
 

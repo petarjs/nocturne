@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import type { Op } from "@/lib/schema";
+import type { Op } from "@nocturne/core";
 import { useSceneStore } from "@/lib/store";
 
 /**

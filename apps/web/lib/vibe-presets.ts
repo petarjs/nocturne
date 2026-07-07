@@ -1,5 +1,5 @@
-import type { ThemeTokens } from "@/lib/schema";
-import { observatory, kanso, noir } from "@/lib/themes";
+import type { ThemeTokens } from "@nocturne/core";
+import { observatory, kanso, noir } from "@nocturne/core/themes";
 
 /** Canned vibe outputs for the drawer stub (§10) — no LLM yet. */
 export const rainyTokyo: ThemeTokens = {

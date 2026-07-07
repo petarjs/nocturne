@@ -1,5 +1,5 @@
-import type { Widget } from "@/lib/schema";
-import { parsePresetData } from "@/lib/schema/widget";
+import type { Widget } from "@nocturne/core";
+import { parsePresetData } from "@nocturne/core";
 
 const FIXTURE_EPOCH = Date.UTC(2026, 6, 3, 22, 0, 0);
 

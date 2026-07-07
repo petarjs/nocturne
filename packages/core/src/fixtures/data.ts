@@ -1,4 +1,4 @@
-import type { PresetType } from "@/lib/schema";
+import type { PresetType } from "../schema";
 
 // Fixtures are evaluated on both the server (SSR) and the client
 // (hydration) — Math.random()/Date.now() at module scope would diverge

@@ -12,9 +12,9 @@ import { StatusGrid } from "@/components/widgets/StatusGrid";
 import { List } from "@/components/widgets/List";
 import { Headline } from "@/components/widgets/Headline";
 import { ActIndicator } from "@/components/display/ActIndicator";
-import type { Widget } from "@/lib/schema";
+import type { Widget } from "@nocturne/core";
 import type { WidgetSlot } from "@/lib/layout/types";
-import { parsePresetData } from "@/lib/schema/widget";
+import { parsePresetData } from "@nocturne/core";
 import { useMotionPrefs } from "@/lib/motion-prefs";
 import { MotionDialectProvider } from "@/lib/motion-context";
 import { useActRotation } from "@/components/hooks/useActRotation";
@@ -27,7 +27,7 @@ import { useStalenessWatcher } from "@/lib/staleness";
 import { useSceneStore } from "@/lib/store";
 import { useUrlSceneBootstrap } from "@/lib/display/urlBootstrap";
 import { useDevOpsSync } from "@/lib/display/devOpsSync";
-import { resolveTheme } from "@/lib/themes";
+import { resolveTheme } from "@nocturne/core/themes";
 
 function FallbackWidget({ widget }: { widget: Widget }) {
   return (

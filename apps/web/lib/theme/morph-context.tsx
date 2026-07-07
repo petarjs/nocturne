@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import type { ThemeTokens } from "@/lib/schema";
+import type { ThemeTokens } from "@nocturne/core";
 import { interpolateTheme, THEME_MORPH_MS, morphActs } from "@/lib/theme/interpolate";
 
 export type ThemeMorphState = {

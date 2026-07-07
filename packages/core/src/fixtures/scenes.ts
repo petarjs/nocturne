@@ -1,6 +1,6 @@
-import type { Scene } from "@/lib/schema";
-import { observatory } from "@/lib/themes";
-import { fixtures } from "./index";
+import type { Scene } from "../schema";
+import { observatory } from "../themes";
+import { fixtures } from "./data";
 
 export const homelabScene: Scene = {
   version: 1,

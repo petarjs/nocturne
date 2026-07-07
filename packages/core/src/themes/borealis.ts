@@ -1,4 +1,4 @@
-import type { ThemeTokens } from "@/lib/schema";
+import type { ThemeTokens } from "../schema";
 
 /** Green neon wave curtains over an emerald void — vertical-striated light
  * flowing slowly leftward, glow breathing wider and tighter (§5 `borealis`

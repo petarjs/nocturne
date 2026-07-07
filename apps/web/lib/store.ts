@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import type { Scene, Op } from "./schema";
-import { reduce, mergeWidgetData } from "./reducer";
-import { homelabScene, scenePresets } from "@/fixtures/scenes";
+import type { Scene, Op } from "@nocturne/core";
+import { reduce, mergeWidgetData } from "@nocturne/core";
+import { homelabScene, scenePresets } from "@nocturne/core/fixtures";
 import { momentBus } from "./moments/bus";
 import { evaluateMoment, hasActiveAlertCondition } from "./moments/evaluate";
 

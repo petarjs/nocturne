@@ -1,4 +1,4 @@
-import type { ThemeTokens } from "@/lib/schema";
+import type { ThemeTokens } from "../schema";
 
 /** Twilight valley — lavender dusk sky, layered mountains, wind-swayed
  * flowering bushes and grass in the foreground (§5 `meadow` engine). */

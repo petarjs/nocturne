@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
-import type { MotionDialect } from "@/lib/schema";
+import type { MotionDialect } from "@nocturne/core";
 
 const MotionDialectContext = createContext<MotionDialect>("calm");
 

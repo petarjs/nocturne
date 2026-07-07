@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Act, Mood, Widget } from "@/lib/schema";
-import type { Narrative } from "@/lib/schema";
+import type { Act, Mood, Widget } from "@nocturne/core";
+import type { Narrative } from "@nocturne/core";
 import { actHasWidget } from "@/lib/layout/actUtils";
 import { momentBus, type MomentEvent } from "@/lib/moments/bus";
 

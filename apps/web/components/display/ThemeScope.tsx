@@ -1,11 +1,11 @@
 "use client";
 
-import type { ThemeTokens } from "@/lib/schema";
+import type { ThemeTokens } from "@nocturne/core";
 import type { EffectTier } from "@/lib/tiers";
 import type { CSSProperties, ReactNode } from "react";
 import { useViewportScale } from "@/components/hooks/useViewportScale";
 import { TYPE_SCALE } from "@/lib/typography/scale";
-import { resolveFontVar } from "@/lib/themes/fonts";
+import { resolveFontVar } from "@nocturne/core/themes";
 
 function surfaceAlpha(density: ThemeTokens["density"]): number {
   return density === "airy" ? 0.08 : 0.1;

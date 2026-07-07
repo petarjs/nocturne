@@ -1,4 +1,4 @@
-import type { ThemeTokens } from "@/lib/schema";
+import type { ThemeTokens } from "../schema";
 import { observatory } from "./observatory";
 import { kanso } from "./kanso";
 import { noir } from "./noir";

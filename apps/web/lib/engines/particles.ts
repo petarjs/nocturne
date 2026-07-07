@@ -1,4 +1,4 @@
-import type { ThemeTokens, Mood } from "@/lib/schema";
+import type { ThemeTokens, Mood } from "@nocturne/core";
 import type { BackgroundEngine, EngineParams } from "./types";
 
 type Particle = {

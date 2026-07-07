@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // No DOM lib on purpose: core runs in the browser, Node, and workerd —
+    // anything DOM- or React-shaped must live in apps/web.
+    "lib": ["ESNext"]
+  },
+  "include": ["src/**/*.ts"]
+}

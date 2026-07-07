@@ -1,0 +1,21 @@
+{
+  "name": "@nocturne/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./themes": "./src/themes/index.ts",
+    "./fixtures": "./src/fixtures/index.ts",
+    "./protocol": "./src/protocol.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

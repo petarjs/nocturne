@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Mood, MotionDialect } from "@/lib/schema";
+import type { Mood, MotionDialect } from "@nocturne/core";
 import { momentBus } from "@/lib/moments/bus";
 import {
   dispatchScanGlitch,

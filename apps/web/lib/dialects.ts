@@ -1,5 +1,5 @@
 import type { Transition } from "motion/react";
-import type { MotionDialect } from "@/lib/schema";
+import type { MotionDialect } from "@nocturne/core";
 
 type MotionStyle = {
   opacity?: number;

@@ -1,5 +1,5 @@
 import { interpolate, formatHex } from "culori";
-import type { ThemeTokens } from "@/lib/schema";
+import type { ThemeTokens } from "@nocturne/core";
 
 function lerpOklchHex(a: string, b: string, t: number): string {
   const result = interpolate([a, b], "oklch")(t);

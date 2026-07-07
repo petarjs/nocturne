@@ -2,6 +2,11 @@ packages:
   - apps/*
   - packages/*
 
+# eslint-config-next resolves `next` opportunistically (not a declared peer);
+# without the hidden hoist that require fails from inside .pnpm.
+hoistPattern:
+  - "*"
+
 allowBuilds:
   sharp: true
   unrs-resolver: true

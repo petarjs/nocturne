@@ -1,4 +1,4 @@
-import type { Act, Narrative, Widget } from "@/lib/schema";
+import type { Act, Narrative, Widget } from "@nocturne/core";
 import { generateAutoActs } from "./autoActs";
 
 /** Resolve the act list for the current narrative mode (§6.3). */

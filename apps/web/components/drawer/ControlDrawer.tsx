@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Mood, PresetType, Widget } from "@/lib/schema";
-import { parsePresetData } from "@/lib/schema/widget";
+import type { Mood, PresetType, Widget } from "@nocturne/core";
+import { parsePresetData } from "@nocturne/core";
 import { useSceneStore } from "@/lib/store";
-import { scenePresets } from "@/fixtures/scenes";
-import { fixtureFor } from "@/fixtures";
-import { themePresets } from "@/lib/themes";
+import { scenePresets } from "@nocturne/core/fixtures";
+import { fixtureFor } from "@nocturne/core/fixtures";
+import { themePresets } from "@nocturne/core/themes";
 import { vibePresets } from "@/lib/vibe-presets";
 import { momentBus } from "@/lib/moments/bus";
 import { setGrowthHour } from "@/lib/engines/growthBus";

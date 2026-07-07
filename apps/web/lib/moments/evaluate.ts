@@ -1,6 +1,6 @@
-import type { Widget } from "@/lib/schema";
+import type { Widget } from "@nocturne/core";
 import type { MomentTier } from "./bus";
-import { parsePresetData, type PresetType } from "@/lib/schema/widget";
+import { parsePresetData, type PresetType } from "@nocturne/core";
 
 function pctDelta(prev: number, next: number): number {
   if (prev === 0) return next === 0 ? 0 : 100;

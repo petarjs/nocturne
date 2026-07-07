@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { formatHex, interpolate } from "culori";
-import type { ThemeTokens, Mood } from "@/lib/schema";
+import type { ThemeTokens, Mood } from "@nocturne/core";
 import type { BackgroundEngine, EngineParams } from "./types";
 import { vertexShader, borealisFragmentShader } from "./shaders";
 

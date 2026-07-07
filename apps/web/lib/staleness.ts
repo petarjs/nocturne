@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import type { Scene } from "@/lib/schema";
+import type { Scene } from "@nocturne/core";
 import { useSceneStore } from "@/lib/store";
 
 const DEFAULT_TTL_SEC = 60;

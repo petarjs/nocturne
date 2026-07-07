@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { sceneSchema } from "@/lib/schema";
+import { sceneSchema } from "@nocturne/core";
 import { useSceneStore } from "@/lib/store";
 import { momentBus } from "@/lib/moments/bus";
 import { evaluateMoment } from "@/lib/moments/evaluate";
