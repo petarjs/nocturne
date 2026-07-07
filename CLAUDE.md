@@ -416,6 +416,8 @@ Next 15 App Router; the display route is fully client-side and static-exportable
 
 ### 9.2 MVP architecture (Phase B — Cloudflare + Next)
 
+> **Status (July 2026):** a simplified local-first version of this spine is built — pnpm monorepo (`apps/web`, `apps/server`, `packages/core`), Hono + one SQLite-backed DO per dashboard running the shared reducer, WS live protocol with pushData coalescing, hashed API keys + per-dashboard view codes (no user accounts), run via `wrangler dev` + Cloudflare Tunnel. See README. Deviations from this section: no D1 (DO storage covers it), no auth/better-auth yet, display served by the Next app rather than static-from-worker.
+
 - **API**: Hono on a Cloudflare Worker. **One Durable Object per screen** holds the Scene, applies ops through the same reducer, broadcasts diffs over WebSocket (hibernation makes idle screens ~free). Full-document resync on connect or version mismatch; last 200 ops in DO storage; scenes persisted to D1 (debounced autosave 10s + explicit `saveScene`).
 - **Display client**: the same Next app, deployed static (the display route has no server dependency — this deliberately sidesteps OpenNext risk; marketing pages can go wherever).
 - **Ingest coalescing**: data-plane pushes accepted at up to 10 rps/screen, coalesced server-side to ≤ 4 broadcast frames/sec.
