@@ -1,3 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+
 allowBuilds:
   sharp: true
   unrs-resolver: true
+  # wrangler's local runtime + bundler both need their postinstall scripts
+  workerd: true
+  esbuild: true
