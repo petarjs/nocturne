@@ -6,6 +6,8 @@ export const fontFamilyVars: Record<string, string> = {
   "IBM Plex Mono": "var(--font-ibm-plex-mono)",
   "Shippori Mincho": "var(--font-shippori-mincho)",
   "M PLUS 1 Code": "var(--font-mplus1-code)",
+  "Space Grotesk": "var(--font-space-grotesk)",
+  "Geist Mono": "var(--font-geist-mono)",
 };
 
 export function resolveFontVar(familyName: string): string {

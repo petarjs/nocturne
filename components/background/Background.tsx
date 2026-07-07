@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { ThemeTokens, Mood } from "@/lib/schema";
 import { AuroraEngine } from "@/lib/engines/aurora";
+import { BorealisEngine } from "@/lib/engines/borealis";
 import { FlatEngine } from "@/lib/engines/flat";
 import { GridHorizonEngine } from "@/lib/engines/gridHorizon";
 import { GrowthEngine } from "@/lib/engines/growth";
@@ -30,6 +31,8 @@ function createEngine(
         return new ParticlesEngine();
       case "meadow":
         return new MeadowEngine();
+      case "borealis":
+        return new BorealisEngine();
       case "growth":
         // §5.6 splurge. Revert this single case to `new ParticlesEngine()` for
         // the pre-authorized petals-only fallback if the beauty gate fails.

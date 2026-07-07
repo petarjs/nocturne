@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import {
   Chakra_Petch,
+  Geist_Mono,
   IBM_Plex_Mono,
   M_PLUS_1_Code,
   Shippori_Mincho,
   Sora,
+  Space_Grotesk,
   Spline_Sans_Mono,
 } from "next/font/google";
 import "./globals.css";
@@ -44,6 +46,16 @@ const fontMplus1Code = M_PLUS_1_Code({
   weight: ["400", "500"],
 });
 
+const fontSpaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+});
+
+const fontGeistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
 const fontVars = [
   fontSora.variable,
   fontSplineMono.variable,
@@ -51,6 +63,8 @@ const fontVars = [
   fontIbmPlexMono.variable,
   fontShipporiMincho.variable,
   fontMplus1Code.variable,
+  fontSpaceGrotesk.variable,
+  fontGeistMono.variable,
 ].join(" ");
 
 export const metadata: Metadata = {
