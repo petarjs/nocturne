@@ -63,8 +63,9 @@ export class RegistryDO extends DurableObject<Env> {
     this.ctx.storage.sql.exec(`UPDATE dashboards SET name = ? WHERE slug = ?`, name, slug);
   }
 
-  removeDashboard(slug: string): void {
-    this.ctx.storage.sql.exec(`DELETE FROM dashboards WHERE slug = ?`, slug);
+  removeDashboard(slug: string): { ok: boolean } {
+    const cursor = this.ctx.storage.sql.exec(`DELETE FROM dashboards WHERE slug = ?`, slug);
+    return { ok: cursor.rowsWritten > 0 };
   }
 
   // ── API keys ──────────────────────────────────────────────────────────────

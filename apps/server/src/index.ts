@@ -2,9 +2,11 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
+import { opsBatchSchema, type Op } from "@nocturne/core";
 import { apiError } from "./errors";
 import { authenticate, authFailure, requireApiKey, clearKeyCache } from "./auth";
-import { createKeySchema } from "./validate";
+import { createDashboardSchema, createKeySchema, settingsSchema } from "./validate";
+import type { SceneAccess } from "./do/scene";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -81,8 +83,82 @@ app.delete("/v1/keys/:id", requireApiKey, async (c) => {
 
 // ── dashboards ────────────────────────────────────────────────────────────
 
+const sceneDO = (env: Env, slug: string) => env.SCENE_DO.get(env.SCENE_DO.idFromName(slug));
+
+/** View codes travel as `?code=` (WS-compatible) or the header (REST). */
+const viewCode = (c: { req: { query: (k: string) => string | undefined; header: (k: string) => string | undefined } }) =>
+  c.req.query("code") ?? c.req.header("x-nocturne-view-code") ?? null;
+
 app.get("/v1/dashboards", async (c) => {
   return c.json({ dashboards: await registry(c.env).listDashboards() });
+});
+
+app.post("/v1/dashboards", requireApiKey, async (c) => {
+  const parsed = createDashboardSchema.safeParse(await readJson(c));
+  if (!parsed.success) {
+    return apiError(c, "invalid", "invalid dashboard", z.flattenError(parsed.error));
+  }
+  const { slug, scene } = parsed.data;
+  const name = parsed.data.name ?? slug;
+  const created = await registry(c.env).createDashboard(slug, name);
+  if (!created.ok) return apiError(c, "conflict", "dashboard already exists");
+  await sceneDO(c.env, slug).init({ slug, name, scene: scene ?? null });
+  return c.json({ slug, name }, 201);
+});
+
+app.delete("/v1/dashboards/:slug", requireApiKey, async (c) => {
+  const slug = c.req.param("slug");
+  const removed = await registry(c.env).removeDashboard(slug);
+  if (!removed.ok) return apiError(c, "not_found", "no such dashboard");
+  await sceneDO(c.env, slug).purge();
+  return c.json({ ok: true });
+});
+
+app.patch("/v1/dashboards/:slug/settings", requireApiKey, async (c) => {
+  const slug = c.req.param("slug");
+  const parsed = settingsSchema.safeParse(await readJson(c));
+  if (!parsed.success) {
+    return apiError(c, "invalid", "invalid settings", z.flattenError(parsed.error));
+  }
+  const res = await sceneDO(c.env, slug).patchSettings(parsed.data);
+  if (res === null) return apiError(c, "not_found", "no such dashboard");
+  if (parsed.data.name !== undefined) {
+    await registry(c.env).renameDashboard(slug, parsed.data.name);
+  }
+  return c.json({ slug, name: res.name, viewCodeRequired: res.viewCodeRequired });
+});
+
+app.get("/v1/dashboards/:slug/scene", async (c) => {
+  // Cast: wrangler's RPC stub types garble unions in nested properties; the
+  // method's declared return type is authoritative (plain JSON over the wire).
+  const res = (await sceneDO(c.env, c.req.param("slug")).getSceneFor(viewCode(c))) as SceneAccess;
+  if (res.code === "not_found") return apiError(c, "not_found", "no such dashboard");
+  if (res.code === "view_code_required") {
+    return apiError(c, "view_code_required", "this dashboard requires a view code");
+  }
+  if (res.code === "forbidden") return apiError(c, "forbidden", "wrong view code");
+  return c.json(res.snapshot);
+});
+
+app.post("/v1/dashboards/:slug/ops", requireApiKey, async (c) => {
+  const body = await readJson(c);
+  const parsed = opsBatchSchema.safeParse(Array.isArray(body) ? body : [body]);
+  if (!parsed.success) {
+    return apiError(c, "invalid", "invalid ops", z.flattenError(parsed.error));
+  }
+  const res = await sceneDO(c.env, c.req.param("slug")).applyOps(parsed.data);
+  if (res.rev === null) return apiError(c, "not_found", "no such dashboard");
+  return c.json({ rev: res.rev });
+});
+
+// The curl one-liner: POST any JSON patch straight at a widget.
+app.post("/v1/dashboards/:slug/widgets/:wid/data", requireApiKey, async (c) => {
+  const body = await readJson(c);
+  if (body === undefined) return apiError(c, "invalid", "request body must be JSON");
+  const ops: Op[] = [{ type: "pushData", id: c.req.param("wid"), data: body }];
+  const res = await sceneDO(c.env, c.req.param("slug")).applyOps(ops);
+  if (res.rev === null) return apiError(c, "not_found", "no such dashboard");
+  return c.json({ rev: res.rev });
 });
 
 export default app;

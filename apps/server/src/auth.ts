@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { createMiddleware } from "hono/factory";
 import { API_KEY_PATTERN, sha256Hex } from "./keys";
 import { apiError } from "./errors";
 
@@ -47,11 +48,8 @@ export function authFailure(c: Context<{ Bindings: Env }>, reason: "missing" | "
     : apiError(c, "forbidden", "invalid or revoked API key");
 }
 
-export async function requireApiKey(
-  c: Context<{ Bindings: Env }>,
-  next: () => Promise<void>
-): Promise<Response | void> {
+export const requireApiKey = createMiddleware<{ Bindings: Env }>(async (c, next) => {
   const auth = await authenticate(c);
   if (!auth.ok) return authFailure(c, auth.reason);
   await next();
-}
+});
