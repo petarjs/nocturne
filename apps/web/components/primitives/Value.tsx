@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useMotionValueEvent, useSpring, useTransform } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { motion, useMotionValue, useSpring } from "motion/react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMotionDialect } from "@/lib/motion-context";
 import { useMomentFlash } from "@/lib/moment-flash-context";
 import { valueSpring, valueUpdateFlavor } from "@/lib/dialects";
@@ -26,14 +26,29 @@ export function Value({
   const emphasized = flash?.tier === "t2";
   const t1Pulse = flash?.tier === "t1";
 
-  const spring = useSpring(value, {
-    stiffness: emphasized ? springConfig.stiffness * 1.4 : springConfig.stiffness,
-    damping: emphasized ? springConfig.damping * 0.75 : springConfig.damping,
-  });
+  // motion v12 useSpring only tracks prop changes when the source is a
+  // MotionValue — a bare number is snapshotted once in attachFollow.
+  const source = useMotionValue(value);
+  const springOptions = useMemo(
+    () => ({
+      stiffness: emphasized ? springConfig.stiffness * 1.4 : springConfig.stiffness,
+      damping: emphasized ? springConfig.damping * 0.75 : springConfig.damping,
+    }),
+    [emphasized, springConfig.damping, springConfig.stiffness]
+  );
+  const spring = useSpring(source, springOptions);
+
   const flickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevValueRef = useRef(value);
   const [inkLift, setInkLift] = useState(false);
   const [inkBleed, setInkBleed] = useState(false);
+  const [text, setText] = useState(() => value.toFixed(decimals));
+
+  useLayoutEffect(() => {
+    const format = (v: number) => setText(v.toFixed(decimals));
+    format(spring.get());
+    return spring.on("change", format);
+  }, [spring, decimals]);
 
   useEffect(() => {
     if (flickerRef.current) {
@@ -46,10 +61,10 @@ export function Value({
       flickerRef.current = setInterval(() => {
         if (step < 3) {
           const jitter = value * (0.82 + Math.random() * 0.36);
-          spring.set(jitter);
+          source.set(jitter);
           step += 1;
         } else {
-          spring.set(value);
+          source.set(value);
           if (flickerRef.current) clearInterval(flickerRef.current);
           flickerRef.current = null;
         }
@@ -62,7 +77,7 @@ export function Value({
     if (flavor === "ink" && prevValueRef.current !== value) {
       setInkLift(true);
       setInkBleed(true);
-      spring.set(value);
+      source.set(value);
       const timer = setTimeout(() => {
         setInkLift(false);
         setInkBleed(false);
@@ -72,13 +87,8 @@ export function Value({
     }
 
     prevValueRef.current = value;
-    spring.set(value);
-  }, [value, flavor, spring]);
-
-  const formatted = useTransform(spring, (v) => v.toFixed(decimals));
-  const [text, setText] = useState(() => value.toFixed(decimals));
-
-  useMotionValueEvent(formatted, "change", setText);
+    source.set(value);
+  }, [value, flavor, source]);
 
   const sizeVar = {
     "value-s": "var(--n-value-s)",
