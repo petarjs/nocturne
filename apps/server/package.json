@@ -1,0 +1,22 @@
+{
+  "name": "@nocturne/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --persist-to ./data",
+    "build": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nocturne/core": "workspace:*",
+    "hono": "^4.11.9",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "wrangler": "^4"
+  }
+}

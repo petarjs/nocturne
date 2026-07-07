@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nocturne-server",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-01",
+  "dev": {
+    "port": 8787
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "SCENE_DO", "class_name": "SceneDO" },
+      { "name": "REGISTRY_DO", "class_name": "RegistryDO" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["SceneDO", "RegistryDO"] }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
