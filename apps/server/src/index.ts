@@ -140,6 +140,15 @@ app.get("/v1/dashboards/:slug/scene", async (c) => {
   return c.json(res.snapshot);
 });
 
+// Live updates: read-only WebSocket, gated by the view code inside the DO
+// (rejections arrive as app close codes — browsers can't read upgrade errors).
+app.get("/v1/dashboards/:slug/live", (c) => {
+  if (c.req.header("upgrade")?.toLowerCase() !== "websocket") {
+    return apiError(c, "invalid", "expected a WebSocket upgrade");
+  }
+  return sceneDO(c.env, c.req.param("slug")).fetch(c.req.raw);
+});
+
 app.post("/v1/dashboards/:slug/ops", requireApiKey, async (c) => {
   const body = await readJson(c);
   const parsed = opsBatchSchema.safeParse(Array.isArray(body) ? body : [body]);
