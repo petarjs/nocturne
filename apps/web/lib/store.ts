@@ -4,6 +4,7 @@ import { reduce, mergeWidgetData } from "@nocturne/core";
 import { homelabScene, scenePresets } from "@nocturne/core/fixtures";
 import { momentBus } from "./moments/bus";
 import { evaluateMoment, hasActiveAlertCondition } from "./moments/evaluate";
+import { getOpsSink } from "./remote/sink";
 
 // Fixed epoch so SSR and client agree on staleness timestamps (hydration-safe).
 const INITIAL_UPDATED_AT = Date.UTC(2026, 6, 3, 22, 0, 0);
@@ -31,6 +32,12 @@ type SceneStore = {
   scene: Scene;
   /** side channel, not scene state: last time each widget's data changed (§4.5 staleness) */
   lastUpdated: Record<string, number>;
+  /**
+   * Local-only ingestion: reduce + side effects, no write sink. Server frames
+   * and client-derived presentation state (staleness) enter here so a pure
+   * viewer never needs an API key and remote frames can't echo back out.
+   */
+  ingestOps: (ops: Op[]) => void;
   applyOp: (op: Op) => void;
   applyOps: (ops: Op[]) => void;
 };
@@ -110,23 +117,7 @@ function finalizeLoadedScene(scene: Scene): Scene {
 export const useSceneStore = create<SceneStore>((set, get) => ({
   scene: bootstrappedHomelab,
   lastUpdated: Object.fromEntries(bootstrappedHomelab.widgets.map((w) => [w.id, INITIAL_UPDATED_AT])),
-  applyOp: (op) => {
-    const scene = get().scene;
-    const lastUpdated = { ...get().lastUpdated };
-    const momentTier = runSideEffects(op, scene, lastUpdated);
-    let nextScene = reduce(scene, op, { scenesByName: scenePresets });
-    nextScene = applyMomentAndRecovery(nextScene, op, momentTier);
-
-    if (needsFreshTimestamps(op)) {
-      nextScene = finalizeLoadedScene(nextScene);
-    }
-
-    set({
-      scene: nextScene,
-      lastUpdated: needsFreshTimestamps(op) ? freshLastUpdated(nextScene) : lastUpdated,
-    });
-  },
-  applyOps: (ops) => {
+  ingestOps: (ops) => {
     let scene = get().scene;
     const lastUpdated = { ...get().lastUpdated };
     ops.forEach((op) => {
@@ -137,5 +128,15 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     const reset = ops.some(needsFreshTimestamps);
     if (reset) scene = finalizeLoadedScene(scene);
     set({ scene, lastUpdated: reset ? freshLastUpdated(scene) : lastUpdated });
+  },
+  applyOp: (op) => {
+    const sink = getOpsSink();
+    if (sink) return sink([op]);
+    get().ingestOps([op]);
+  },
+  applyOps: (ops) => {
+    const sink = getOpsSink();
+    if (sink) return sink(ops);
+    get().ingestOps(ops);
   },
 }));

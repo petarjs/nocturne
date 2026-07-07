@@ -14,7 +14,10 @@ const CHECK_INTERVAL_MS = 5000;
  * `normal` and `stale`; Stage owns the actual visual treatment.
  */
 export function useStalenessWatcher(scene: Scene, lastUpdated: Record<string, number>) {
-  const applyOp = useSceneStore((s) => s.applyOp);
+  // Deliberately ingestOps, not applyOp: staleness is per-client presentation
+  // state derived from local receive times. In remote mode it must not POST
+  // to the server (a pure viewer has no API key), just flip state locally.
+  const ingestOps = useSceneStore((s) => s.ingestOps);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -26,12 +29,12 @@ export function useStalenessWatcher(scene: Scene, lastUpdated: Record<string, nu
         const shouldBeStale = since >= threshold;
 
         if (shouldBeStale && widget.state === "normal") {
-          applyOp({ type: "updateWidget", id: widget.id, patch: { state: "stale" } });
+          ingestOps([{ type: "updateWidget", id: widget.id, patch: { state: "stale" } }]);
         } else if (!shouldBeStale && widget.state === "stale") {
-          applyOp({ type: "updateWidget", id: widget.id, patch: { state: "normal" } });
+          ingestOps([{ type: "updateWidget", id: widget.id, patch: { state: "normal" } }]);
         }
       }
     }, CHECK_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [scene.widgets, lastUpdated, applyOp]);
+  }, [scene.widgets, lastUpdated, ingestOps]);
 }

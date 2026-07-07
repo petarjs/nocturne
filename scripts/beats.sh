@@ -2,32 +2,42 @@
 #
 # Nocturne — the six-beat go/no-go runbook (§1.3 / §10 acceptance).
 #
-# Drives the dev ops API (§9.1) to perform the demo beats that don't need MCP
-# summoning: 1 (idle), 3 (react), 4 (transform), 5 (alert), 6 (sleep).
+# Drives the real control plane (§9.2) to perform the demo beats that don't
+# need MCP summoning: 1 (idle), 3 (react), 4 (transform), 5 (alert), 6 (sleep).
 #
-# Prereq: open the display with the dev sync bridge enabled so curl reaches the
-# screen (§9.1 — the Phase-A stand-in for the Phase-B WebSocket spine):
+# Prereqs: the server running (pnpm dev:server), an API key, a dashboard, and
+# the display open on it so the WebSocket carries every beat to the screen:
 #
-#     open http://localhost:3000/display?sync=1
+#     open "http://localhost:3000/display?d=living-room"
 #
-# Then run this whole script, or source it and call beats individually:
+#     NOCTURNE_KEY=noct_… ./scripts/beats.sh            # run every beat
+#     NOCTURNE_KEY=noct_… source scripts/beats.sh; beat5 # fire one beat
 #
-#     ./scripts/beats.sh              # run every beat with pauses
-#     source scripts/beats.sh; beat5  # fire just the alert beat
+# Env: NOCTURNE_API (default http://localhost:8787), NOCTURNE_DASH (default
+# living-room), NOCTURNE_KEY (required — create one at http://localhost:3000).
 #
 # Beat 2 (Summon) is intentionally absent — it's the MCP path, Phase B (§11).
 
 set -euo pipefail
 
-BASE="${NOCTURNE_BASE:-http://localhost:3000}"
-OPS="$BASE/api/dev/ops"
+API="${NOCTURNE_API:-http://localhost:8787}"
+DASH="${NOCTURNE_DASH:-living-room}"
+OPS="$API/v1/dashboards/$DASH/ops"
+
+if [[ -z "${NOCTURNE_KEY:-}" ]]; then
+  echo "NOCTURNE_KEY is required (create an API key on the admin page)" >&2
+  exit 1
+fi
 
 # POST one or more ops (a JSON array) and pretty-print nothing — the screen is
 # the output. Fails loudly on a non-2xx so a broken beat is obvious on the wall.
 op() {
-  curl -sS -f -X POST "$OPS" -H 'content-type: application/json' -d "$1" > /dev/null \
+  curl -sS -f -X POST "$OPS" \
+    -H "Authorization: Bearer $NOCTURNE_KEY" \
+    -H 'content-type: application/json' \
+    -d "$1" > /dev/null \
     && echo "  ✓ ops applied" \
-    || { echo "  ✗ ops failed — is the dev server up and /display?sync=1 open?"; return 1; }
+    || { echo "  ✗ ops failed — is the server up and the dashboard created?"; return 1; }
 }
 
 pause() { sleep "${1:-4}"; }

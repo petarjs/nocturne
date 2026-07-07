@@ -21,6 +21,9 @@ export function useUrlSceneBootstrap() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    // Remote mode (?d=): the server owns the scene — URL scene/theme/mood
+    // params must not fight the incoming sync.
+    if (params.get("d")) return;
     const ops: Op[] = [];
 
     const scene = params.get("scene");

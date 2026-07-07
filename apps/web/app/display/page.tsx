@@ -26,8 +26,10 @@ import { useHeartbeat } from "@/lib/heartbeat";
 import { useStalenessWatcher } from "@/lib/staleness";
 import { useSceneStore } from "@/lib/store";
 import { useUrlSceneBootstrap } from "@/lib/display/urlBootstrap";
-import { useDevOpsSync } from "@/lib/display/devOpsSync";
+import { useRemoteSync, type RemoteSync } from "@/lib/remote/useRemoteSync";
+import { ViewCodeGate } from "@/components/display/ViewCodeGate";
 import { resolveTheme } from "@nocturne/core/themes";
+import { useEffect, useState } from "react";
 
 function FallbackWidget({ widget }: { widget: Widget }) {
   return (
@@ -87,7 +89,7 @@ function renderWidget(widget: Widget, slot: WidgetSlot) {
   }
 }
 
-function DisplayContent() {
+function DisplayContent({ remote }: { remote: RemoteSync }) {
   const scene = useSceneStore((s) => s.scene);
   const lastUpdated = useSceneStore((s) => s.lastUpdated);
   const motion = useMotionPrefs();
@@ -162,7 +164,18 @@ function DisplayContent() {
             </div>
             {!drawerOpen && (
               <div className="n-label pointer-events-none absolute bottom-4 right-4 opacity-40">
-                {fps} fps · ` control
+                {fps} fps
+                {remote.active ? (remote.connected ? " · live" : " · reconnecting") : ""}
+                {remote.writeFailed && (
+                  <span style={{ color: "var(--n-negative)" }}> · write failed</span>
+                )}{" "}
+                · ` control
+              </div>
+            )}
+            {remote.needsCode && <ViewCodeGate onSubmit={remote.submitCode} />}
+            {remote.gone && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center">
+                <div className="n-label">this dashboard no longer exists</div>
               </div>
             )}
             {indicatorVisible && <ActIndicator progress={dwellProgress} pulse={indicatorPulse} />}
@@ -174,17 +187,24 @@ function DisplayContent() {
   );
 }
 
-// Display route: fully client-side, static-exportable (§9.1).
+// Display route: fully client-side (§9.1). With ?d=<slug> it becomes a live
+// view of that dashboard on the server; without it, the local fixture mode
+// that golden frames and offline demos rely on.
 export default function DisplayPage() {
+  const [slug, setSlug] = useState<string | null>(null);
+  useEffect(() => {
+    setSlug(new URLSearchParams(window.location.search).get("d"));
+  }, []);
+
   useUrlSceneBootstrap();
-  useDevOpsSync();
+  const remote = useRemoteSync(slug);
   const scene = useSceneStore((s) => s.scene);
   const theme = resolveTheme(scene.theme);
   const motion = useMotionPrefs();
 
   return (
     <ThemeMorphProvider targetTheme={theme} reducedMotion={motion.reducedMotion}>
-      <DisplayContent />
+      <DisplayContent remote={remote} />
     </ThemeMorphProvider>
   );
 }
