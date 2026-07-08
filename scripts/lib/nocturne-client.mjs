@@ -64,13 +64,13 @@ export async function pushData(api, dash, key, widgetId, data) {
  * the layout engine only draws widgets a narrative act references.
  */
 export async function ensureWidget(api, dash, key, widget, viewCode) {
-  const scene = await getScene(api, dash, key, viewCode);
+  const { scene } = await getScene(api, dash, key, viewCode);
   const exists = scene.widgets.some((w) => w.id === widget.id);
   if (!exists) {
     await applyOps(api, dash, key, [{ type: "addWidget", widget }]);
   }
 
-  const acts = scene.narrative.acts.length > 0 ? scene.narrative.acts : [{ supporting: [], ambient: [], rotation: undefined }];
+  const acts = scene.narrative.acts.length > 0 ? scene.narrative.acts : [{ supporting: [], ambient: [] }];
   const [firstAct, ...rest] = acts;
   const onScreen =
     firstAct.hero === widget.id ||
