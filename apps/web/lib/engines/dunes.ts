@@ -180,6 +180,14 @@ export class DunesEngine implements BackgroundEngine {
   private flash = 0;
   private nextFlashAt = 0;
 
+  // rolling dust cloud: a rare heartbeat-scheduled event (§4.6), not a
+  // permanent fixture — "from time to time" per the desert reference
+  private dustActive = false;
+  private dustStart = 0;
+  private dustDuration = 0;
+  private dustSeed = 0;
+  private nextDustAt = 6 + Math.random() * 20;
+
   private hourOverride: number | null = null;
   private clockNightT = 0;
   private onHour = (e: Event) => {
@@ -307,6 +315,11 @@ export class DunesEngine implements BackgroundEngine {
         uGlintK: { value: 1 },
         uStreamK: { value: 1 },
         uFlash: { value: 0 },
+        uDustXFar: { value: -2 },
+        uDustXNear: { value: -2 },
+        uDustAFar: { value: 0 },
+        uDustANear: { value: 0 },
+        uDustSeed: { value: 0 },
         uSunX: { value: 0.3 },
         uVignette: { value: 0 },
         uVignetteColor: { value: new THREE.Vector3(0, 0, 0) },
@@ -361,6 +374,36 @@ export class DunesEngine implements BackgroundEngine {
     const u = this.material.uniforms;
     u.uTime.value = this.warpedT;
     u.uFlash.value = this.flash < 0.004 ? 0 : this.flash;
+
+    // rolling dust cloud: rare, wind-scheduled, never during sleep/alert —
+    // this is weather, not a status effect
+    if (!this.dustActive && this.mood !== "sleep" && this.mood !== "alert" && t >= this.nextDustAt) {
+      this.dustActive = true;
+      this.dustStart = t;
+      this.dustDuration = 22 + Math.random() * 16;
+      this.dustSeed = Math.random() * 90;
+    }
+    if (this.dustActive) {
+      const dur = this.dustDuration;
+      // near layer crosses in the base duration; far layer lags ~1.7×
+      // slower, giving the pair visible parallax separation
+      const progNear = Math.min(1, (t - this.dustStart) / dur);
+      const progFar = Math.min(1, (t - this.dustStart) / (dur * 1.7));
+      const envNear = smoothstep(0, 0.1, progNear) * (1 - smoothstep(0.82, 1, progNear));
+      const envFar = smoothstep(0, 0.14, progFar) * (1 - smoothstep(0.82, 1, progFar));
+      u.uDustXNear.value = 1.35 - 1.7 * progNear;
+      u.uDustXFar.value = 1.25 - 1.55 * progFar;
+      u.uDustANear.value = envNear * this.baseSpeed;
+      u.uDustAFar.value = envFar * 0.6 * this.baseSpeed;
+      u.uDustSeed.value = this.dustSeed;
+      if (progNear >= 1 && progFar >= 1) {
+        this.dustActive = false;
+        this.nextDustAt = t + 50 + Math.random() * 110;
+      }
+    } else {
+      u.uDustANear.value = 0;
+      u.uDustAFar.value = 0;
+    }
 
     // ±6px drift over a 10-minute cycle — the OLED burn-in guard (§5.1).
     // Wall-clock time: the guard must not slow down with the mood.

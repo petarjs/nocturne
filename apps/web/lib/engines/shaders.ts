@@ -340,6 +340,14 @@ export const dunesFragmentShader = /* glsl */ `
   uniform vec3 uVignetteColor;
   uniform float uDim;
 
+  // rolling dust cloud — an occasional event, not a permanent fixture
+  // (§4.6 heartbeat-scheduled from the CPU side, see DunesEngine)
+  uniform float uDustXFar;    // far layer center, uv-aspect space, drifts right→left
+  uniform float uDustXNear;   // near layer center, faster, lower, denser
+  uniform float uDustAFar;    // far layer envelope 0..1
+  uniform float uDustANear;   // near layer envelope 0..1
+  uniform float uDustSeed;
+
   #define MAX_PULSES 4
   uniform vec2 uPulseOrigin[MAX_PULSES];
   uniform float uPulseAge[MAX_PULSES];
@@ -385,6 +393,15 @@ export const dunesFragmentShader = /* glsl */ `
     float creep = t * 0.006;
     return noise(vec2(x + creep, seed)) * 0.78
          + noise(vec2(x * 2.3 - creep * 1.6, seed + 7.3)) * 0.22;
+  }
+
+  // fine wind-ripple corrugation — a much higher-frequency third octave,
+  // sampled only for shading (never geometry) so grazing light catches
+  // hundreds of tiny sand ridges without moving the silhouette
+  float rippleN(float x, float y, float seed, float t) {
+    float creep = t * 0.006;
+    return noise(vec2(x * 34.0 + creep * 3.0, y * 60.0 + seed * 5.0)) * 0.6
+         + noise(vec2(x * 71.0 - creep * 2.0, y * 130.0 + seed * 9.0)) * 0.4;
   }
 
   float edgeMask(vec2 uv) {
@@ -462,18 +479,37 @@ export const dunesFragmentShader = /* glsl */ `
     // into violet — the velvet
     float slope = (duneH(x + 0.05, seed, t) - duneH(x - 0.05, seed, t)) * amp * 42.0;
     float ldir = clamp((uSunX - uv.x) * 2.4, -1.0, 1.0);
-    float lit = clamp(0.5 - slope * ldir * 1.7, 0.0, 1.0);
-    lit = lit * lit * (3.0 - 2.0 * lit);
-    vec3 body = mix(uDuneShade, uDuneLit, lit);
+    float litBase = clamp(0.5 - slope * ldir * 1.7, 0.0, 1.0);
 
-    // valleys sink into shadow below the crest
+    // fine wind-ripple corrugation modulates the base slope shading —
+    // hundreds of tiny sand ridges, brightest where they face the sun
+    float ripple = rippleN(x, uv.y, seed, t) - 0.5;
+    float lit = clamp(litBase + ripple * 0.16 * (0.35 + 0.65 * abs(ldir)), 0.0, 1.0);
+    lit = lit * lit * (3.0 - 2.0 * lit);
+
+    // warm-lit face vs cool violet shadow — a wider tonal split than a flat
+    // two-color mix reads as sculpted, not painted
+    vec3 shadeCool = mix(uDuneShade, uHaze, 0.18);
+    vec3 body = mix(shadeCool, uDuneLit, lit);
+
+    // valleys sink into shadow below the crest — ambient occlusion deepens
+    // toward the trough floor instead of a single flat step
     float below = y - uv.y;
     float deepK = smoothstep(0.0, amp * 1.8 + 0.10, below);
-    body = mix(body, uDuneShade * 0.80, deepK * 0.72);
+    float deepK2 = smoothstep(0.0, amp * 4.0 + 0.16, below);
+    body = mix(body, shadeCool * 0.78, deepK * 0.62);
+    body = mix(body, shadeCool * 0.58, deepK2 * 0.30);
 
-    // crest rim-light on sun-facing ridges
-    float rim = exp(-below * 130.0) * clamp(lit * 2.0 - 0.65, 0.0, 1.0);
-    body += uSunGlow * rim * (0.34 * uSun + 0.20 * uMoon);
+    // a sliver of warm bounce light right at the terminator, fading with depth
+    float bounce = exp(-abs(lit - 0.42) * 9.0) * (1.0 - deepK);
+    body += uSunGlow * bounce * 0.10 * (uSun + uMoon * 0.4);
+
+    // crest rim-light on sun-facing ridges — tight, bright highlight where
+    // the light grazes the very top of the ridge
+    float rim = exp(-below * 190.0) * clamp(lit * 2.2 - 0.75, 0.0, 1.0);
+    body += uSunGlow * rim * (0.55 * uSun + 0.30 * uMoon);
+    float rimWide = exp(-below * 70.0) * clamp(lit * 1.7 - 0.5, 0.0, 1.0);
+    body += uSunGlow * rimWide * (0.16 * uSun + 0.08 * uMoon);
 
     // cloud shadows drift across the sand
     body *= 1.0 - cloudShadow * (0.05 + 0.11 * (1.0 - hazeK)) * lightK;
@@ -495,6 +531,35 @@ export const dunesFragmentShader = /* glsl */ `
     body = mix(body, uHaze, hazeK);
 
     col = mix(col, body, m);
+  }
+
+  // a rolling dust cloud: an elongated, wind-warped mass hugging the dune
+  // crests, trailing tendrils behind it — travels right→left and dissolves,
+  // never a static texture. Two calls with different depth params (§ main)
+  // give it parallax: the far cloud sits higher, slower, and paler; the
+  // near one lower, faster, and denser, so the two visibly separate.
+  vec3 dustCloud(
+    vec3 col, vec2 uv, float aspect, float t,
+    float cx, float envelope, float seed,
+    float yMid, float yScale, float widthK, vec3 tint
+  ) {
+    if (envelope < 0.003) return col;
+    vec2 p = vec2((uv.x * aspect - cx) / widthK, (uv.y - yMid) / yScale);
+    // domain-warp the mass so it billows and trails rather than reading as
+    // an ellipse — trailing tendrils stretch behind (to the right, upwind)
+    vec2 warp = vec2(fbm(p * 1.1 + vec2(seed, seed * 1.7)) - 0.5,
+                      fbm(p * 1.1 + vec2(seed * 2.3, seed)) - 0.5);
+    vec2 wp = p + warp * vec2(0.85, 0.35) + vec2(max(p.x, 0.0) * 0.5, 0.0);
+    float d = length(wp * vec2(0.62, 1.55));
+    float body = smoothstep(1.05, 0.05, d);
+    // fine internal turbulence so it reads as tumbling dust, not a flat blob
+    float detail = fbm(vec2(uv.x * aspect * 3.4 - t * 0.24 + seed * 5.0, uv.y * 7.0 + seed));
+    body *= smoothstep(0.22, 0.86, detail + 0.28);
+    body = clamp(body, 0.0, 1.0) * envelope;
+    if (body < 0.003) return col;
+    // dust scatters light warm where it's thin, goes opaque/cool in its core
+    vec3 c = mix(tint, uHaze, smoothstep(0.15, 0.7, body));
+    return mix(col, c, body);
   }
 
   void main() {
@@ -585,6 +650,16 @@ export const dunesFragmentShader = /* glsl */ `
       float gust = 0.35 + 0.65 * gustEnv(uv.x, t, 67.0);
       col += uGlint * band * smoothstep(0.33, 0.88, haze) * gust * uStreamK * 0.13;
     }
+
+    // ---- rolling dust cloud: an occasional event (§4.6 heartbeat-scheduled
+    // from the CPU), never a permanent fixture. Two parallax layers — the
+    // far one higher and paler along the horizon haze, the near one lower,
+    // denser, and warmer as it crosses in front of the crests — travel
+    // right→left at different speeds so the pair visibly separates.
+    col = dustCloud(col, uv, aspect, t, uDustXFar, uDustAFar, uDustSeed,
+                     0.47, 0.16, 0.62, mix(uHaze, uCloudHi, 0.35));
+    col = dustCloud(col, uv, aspect, t, uDustXNear, uDustANear, uDustSeed + 4.1,
+                     0.34, 0.22, 0.85, mix(uDuneLit, uSunGlow, 0.4));
 
     // ---- moment light rolls across the sand; the whole frame breathes with it
     col += uSunGlow * wave * (0.20 + 0.45 * smoothstep(HOR + 0.06, HOR - 0.22, uv.y));
