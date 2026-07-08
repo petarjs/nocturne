@@ -227,14 +227,14 @@ this note is removed.
 | `statusGrid` | ✅ | `{items: [{id, label, state: "up"\|"down"\|"degraded", latency?}]}` |
 | `list` | ✅ | `{items: [{id, label, value: string\|number}]}` |
 | `headline` | ✅ | `{text, kicker?, tone?: "neutral"\|"positive"\|"negative"}` — use this as the narrator, e.g. "All systems nominal" |
-| `barChart` | ✗ | `{label, categories: [{label, value}]}` |
-| `donut` | ✗ | `{label, segments: [{label, value}]}` (max 5) |
-| `table` | ✗ | `{columns: [{key, label, type}], rows: object[]}` |
-| `ticker` | ✗ | `{lines: [{t, text, level?}]}` |
+| `barChart` | ✅ | `{label, categories: [{label, value}]}` |
+| `donut` | ✅ | `{label, segments: [{label, value}]}` (max 5) |
+| `table` | ✅ | `{columns: [{key, label, type}], rows: object[]}` |
+| `ticker` | ✅ | `{lines: [{t, text, level?}]}` |
+| `agenda` | ✅ | `{events: [{id, title, startsAt, endsAt}]}` |
+| `text` | ✅ | `{md: string}` |
 | `nowPlaying` | ✗ | `{title, artist, artUrl?, progress: 0-1, state: "playing"\|"paused"}` |
 | `weather` | ✗ | `{tempC, condition, hi, lo, hourly?}` |
-| `agenda` | ✗ | `{events: [{id, title, startsAt, endsAt}]}` |
-| `text` | ✗ | `{md: string}` |
 | `image` | ✗ | `{src, fit?, kenBurns?}` |
 | `video` | ✗ | `{src, poster, loop?}` |
 | `composite` | ✗ | not yet implemented client-side |
