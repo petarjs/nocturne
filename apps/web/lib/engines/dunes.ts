@@ -3,8 +3,26 @@ import { formatHex, interpolate } from "culori";
 import type { ThemeTokens, Mood } from "@nocturne/core";
 import type { BackgroundEngine, EngineParams } from "./types";
 import { vertexShader, dunesFragmentShader } from "./shaders";
+import { growthBus, type GrowthHourEvent } from "./growthBus";
 
 const MAX_PULSES = 4;
+
+function smoothstep(a: number, b: number, x: number): number {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+/** Continuous night amount (0 day → 1 night) from the wall clock — dawn
+ * breaks 5:15–7:00, dusk falls 18:15–20:00, matching the meadow engine's
+ * time-of-day feel so any theme on local time reads consistently. */
+function nightFromHour(hour: number): number {
+  const h = ((hour % 24) + 24) % 24;
+  if (h < 5.25) return 1;
+  if (h < 7) return 1 - smoothstep(5.25, 7, h);
+  if (h < 18.25) return 0;
+  if (h < 20) return smoothstep(18.25, 20, h);
+  return 1;
+}
 
 type Pulse = { origin: [number, number]; age: number; strength: number };
 
@@ -162,6 +180,12 @@ export class DunesEngine implements BackgroundEngine {
   private flash = 0;
   private nextFlashAt = 0;
 
+  private hourOverride: number | null = null;
+  private clockNightT = 0;
+  private onHour = (e: Event) => {
+    this.hourOverride = (e as CustomEvent<GrowthHourEvent>).detail.hour;
+  };
+
   init(canvas: HTMLCanvasElement, theme: ThemeTokens, params: EngineParams) {
     if (this.renderer) this.releaseGpu();
 
@@ -175,9 +199,19 @@ export class DunesEngine implements BackgroundEngine {
     canvas.addEventListener("webglcontextlost", this.contextLostHandler);
     canvas.addEventListener("webglcontextrestored", this.contextRestoredHandler);
 
+    if (typeof params.hour === "number") this.hourOverride = params.hour;
+    growthBus.removeEventListener("growth-hour", this.onHour);
+    growthBus.addEventListener("growth-hour", this.onHour);
+
     this.buildMaterial();
     this.syncTheme(theme);
     this.resize();
+  }
+
+  private hourNow(): number {
+    if (this.hourOverride !== null) return this.hourOverride;
+    const d = new Date();
+    return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
   }
 
   private num(key: string, fallback: number): number {
@@ -304,7 +338,10 @@ export class DunesEngine implements BackgroundEngine {
 
     // eased mood ramps + integrated pace: the wind glides, never jumps
     const targetAlert = this.mood === "alert" ? 1 : 0;
-    const targetNight = this.mood === "sleep" ? 1 : 0;
+    // the sky follows the wall clock; `sleep` mood force-commits to full night
+    const targetClockNight = nightFromHour(this.hourNow());
+    this.clockNightT += (targetClockNight - this.clockNightT) * Math.min(1, dt / 3.0);
+    const targetNight = Math.max(this.clockNightT, this.mood === "sleep" ? 1 : 0);
     const targetCalm = this.mood === "focus" ? 0.65 : this.mood === "sleep" ? 1 : 0;
     this.alertT += (targetAlert - this.alertT) * Math.min(1, dt / 1.2);
     this.nightT += (targetNight - this.nightT) * Math.min(1, dt / 2.0);
@@ -364,8 +401,10 @@ export class DunesEngine implements BackgroundEngine {
     // a remount mid-alert must come back stormy, mid-sleep moonlit —
     // Background calls setMood right after init, before the first tick
     if (!this.lastTime) {
+      const hourNight = nightFromHour(this.hourNow());
       this.alertT = mood === "alert" ? 1 : 0;
-      this.nightT = mood === "sleep" ? 1 : 0;
+      this.clockNightT = hourNight;
+      this.nightT = Math.max(hourNight, mood === "sleep" ? 1 : 0);
       this.calmT = mood === "focus" ? 0.65 : mood === "sleep" ? 1 : 0;
     }
   }
@@ -392,6 +431,7 @@ export class DunesEngine implements BackgroundEngine {
   dispose() {
     this.canvas?.removeEventListener("webglcontextlost", this.contextLostHandler);
     this.canvas?.removeEventListener("webglcontextrestored", this.contextRestoredHandler);
+    growthBus.removeEventListener("growth-hour", this.onHour);
     this.releaseGpu();
     this.canvas = undefined;
   }

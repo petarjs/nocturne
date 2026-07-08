@@ -478,12 +478,17 @@ export const dunesFragmentShader = /* glsl */ `
     // cloud shadows drift across the sand
     body *= 1.0 - cloudShadow * (0.05 + 0.11 * (1.0 - hazeK)) * lightK;
 
-    // sparse glints on lit faces — the sand catches the light
+    // sparse glints on lit faces — soft round grains catching the light,
+    // not hard pixel pops: a distance-falloff dot inside a sparse cell grid
     if (glintK > 0.001) {
-      vec2 gc = floor(vec2(x * 240.0, uv.y * 240.0 * fr) + seed);
+      vec2 gp = vec2(x * 190.0, uv.y * 190.0 * fr);
+      vec2 gc = floor(gp + seed);
+      vec2 gf = fract(gp + seed) - 0.5;
       float gh = hash(gc);
-      float tw = step(0.9955, gh) * (0.5 + 0.5 * sin(t * (2.0 + gh * 5.0) + gh * 40.0));
-      body += uGlint * tw * lit * (1.0 - deepK) * glintK * 0.5;
+      float on = smoothstep(0.965, 0.995, gh);
+      float dot = smoothstep(0.5, 0.05, length(gf));
+      float tw = 0.35 + 0.65 * (0.5 + 0.5 * sin(t * (0.8 + gh * 1.6) + gh * 40.0));
+      body += uGlint * on * dot * tw * lit * (1.0 - deepK) * glintK * 0.55;
     }
 
     // distance dissolves into the horizon haze
@@ -560,21 +565,25 @@ export const dunesFragmentShader = /* glsl */ `
     duneLayer(col, crest, uv, aspect, t, 0.355, 0.030, 2.2, 23.0, 0.55, lightK, cloudShadow, bend, 0.0);
     duneLayer(col, crest, uv, aspect, t, 0.280, 0.042, 1.7, 37.0, 0.34, lightK, cloudShadow, bend, 0.0);
 
-    // front two layers can shed sand: a gust tears a glinting wisp off the crest
+    // front two layers can shed sand: a low, continuous haze clings to the
+    // crest and drifts downwind, breathing louder when a gust passes — never
+    // popping fully on/off, so it reads as blown sand, not a flying speck
     duneLayer(col, crest, uv, aspect, t, 0.190, 0.058, 1.3, 51.0, 0.16, lightK, cloudShadow, bend, uGlintK * 0.6);
     float above3 = uv.y - crest;
-    if (above3 > 0.0 && above3 < 0.09 && uStreamK > 0.001) {
-      float wisp = fbm(vec2(uv.x * aspect * 6.5 - t * 1.3, above3 * 34.0 - t * 0.4));
-      col += uGlint * exp(-above3 * 60.0) * smoothstep(0.48, 0.85, wisp)
-           * gustEnv(uv.x, t, 51.0) * uStreamK * 0.28;
+    if (above3 > 0.0 && above3 < 0.05 && uStreamK > 0.001) {
+      float haze = fbm(vec2(uv.x * aspect * 8.0 - t * 0.5, above3 * 50.0 - t * 0.6));
+      float band = exp(-above3 * 46.0);
+      float gust = 0.35 + 0.65 * gustEnv(uv.x, t, 51.0);
+      col += uGlint * band * smoothstep(0.35, 0.9, haze) * gust * uStreamK * 0.11;
     }
 
     duneLayer(col, crest, uv, aspect, t, 0.085, 0.075, 1.0, 67.0, 0.0, lightK, cloudShadow, bend, uGlintK);
     float above4 = uv.y - crest;
-    if (above4 > 0.0 && above4 < 0.09 && uStreamK > 0.001) {
-      float wisp = fbm(vec2(uv.x * aspect * 7.5 - t * 1.6, above4 * 30.0 - t * 0.5));
-      col += uGlint * exp(-above4 * 52.0) * smoothstep(0.46, 0.85, wisp)
-           * gustEnv(uv.x, t, 67.0) * uStreamK * 0.34;
+    if (above4 > 0.0 && above4 < 0.05 && uStreamK > 0.001) {
+      float haze = fbm(vec2(uv.x * aspect * 9.0 - t * 0.65, above4 * 46.0 - t * 0.75));
+      float band = exp(-above4 * 40.0);
+      float gust = 0.35 + 0.65 * gustEnv(uv.x, t, 67.0);
+      col += uGlint * band * smoothstep(0.33, 0.88, haze) * gust * uStreamK * 0.13;
     }
 
     // ---- moment light rolls across the sand; the whole frame breathes with it

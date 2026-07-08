@@ -98,9 +98,10 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
 
   const bgEngine = "palette" in scene.theme ? scene.theme.background.engine : null;
   const bgParams = "palette" in scene.theme ? scene.theme.background.params : undefined;
-  // growth and meadow both live on local time; the scrubber drives either
-  const timeActive = bgEngine === "growth" || bgEngine === "meadow";
+  // growth, meadow, and dunes all live on local time; the scrubber drives any of them
+  const timeActive = bgEngine === "growth" || bgEngine === "meadow" || bgEngine === "dunes";
   const meadowActive = bgEngine === "meadow";
+  const dunesActive = bgEngine === "dunes";
   const weather = (bgParams?.weather as string | undefined) ?? "auto";
 
   const fps = useFps(true);
@@ -443,7 +444,9 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
             <p className="text-[11px] text-[var(--n-text2)]/70">
               {meadowActive
                 ? "Night stars + moon · dawn sun · day clouds & birds · golden dusk."
-                : "Dawn spurt · day bloom · dusk fall · night bare + moon (§5.6)."}
+                : dunesActive
+                  ? "Night sky + moonlit sand · dawn warms · golden-hour day · dusk cools back down."
+                  : "Dawn spurt · day bloom · dusk fall · night bare + moon (§5.6)."}
             </p>
           </Section>
         )}
