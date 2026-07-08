@@ -82,11 +82,12 @@ function solveLandscape(act: Act): LayoutResult {
   const contentRows = hasAmbient ? ROWS - 1 : ROWS;
 
   if (heroId) {
-    // Cells are 4 cols wide, so any supporting widget needs a contiguous
-    // 4-col-or-wider strip beside the hero. A centered hero splits the
-    // leftover space into two strips too narrow to pack anything — so
-    // centering only happens when there's truly nothing to pack beside it.
-    const heroCols = supporting.length > 0 ? 6 : 8;
+    // Hero is always 8 cols: with a 4-col supporting strip beside it that's
+    // the full 12-col width (2/3 + 1/3), no dead columns on the right. A
+    // centered hero splits the leftover space into two strips too narrow to
+    // pack anything — so centering only happens when there's truly nothing
+    // to pack beside it.
+    const heroCols = 8;
     // When the ambient strip is present, stretch the hero through the last
     // content row so row 4 doesn't sit empty between the main stage and rail.
     const heroRows = promoted ? 3 : hasAmbient ? contentRows : 4;
