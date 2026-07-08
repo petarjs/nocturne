@@ -19,6 +19,7 @@ import { Ticker } from "@/components/widgets/Ticker";
 import { Agenda } from "@/components/widgets/Agenda";
 import { Text } from "@/components/widgets/Text";
 import { ActIndicator } from "@/components/display/ActIndicator";
+import { ActDots } from "@/components/display/ActDots";
 import type { Widget } from "@nocturne/core";
 import type { WidgetSlot } from "@/lib/layout/types";
 import { parsePresetData } from "@nocturne/core";
@@ -208,7 +209,12 @@ function DisplayContent({ remote, isDev }: { remote: RemoteSync; isDev: boolean 
                 <div className="n-label">this dashboard no longer exists</div>
               </div>
             )}
-            {indicatorVisible && <ActIndicator progress={dwellProgress} pulse={indicatorPulse} />}
+            {indicatorVisible && scene.narrative.rotation.indicator === "dots" && (
+              <ActDots count={actCount} index={actIndex} progress={dwellProgress} pulse={indicatorPulse} />
+            )}
+            {indicatorVisible && scene.narrative.rotation.indicator === "hairline" && (
+              <ActIndicator progress={dwellProgress} pulse={indicatorPulse} />
+            )}
           </div>
           {drawerOpen &&
             (isDev ? <TestControlDrawer motion={motion} /> : <SettingsDrawer motion={motion} />)}

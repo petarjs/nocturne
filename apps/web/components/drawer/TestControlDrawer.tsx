@@ -246,7 +246,12 @@ export function TestControlDrawer({ motion }: { motion: MotionPrefs }) {
                       rotation: {
                         ...scene.narrative.rotation,
                         mode,
-                        indicator: mode === "off" ? "none" : "hairline",
+                        indicator:
+                          mode === "off"
+                            ? "none"
+                            : scene.narrative.rotation.indicator === "none"
+                              ? "dots"
+                              : scene.narrative.rotation.indicator,
                       },
                     })
                   }
@@ -259,6 +264,24 @@ export function TestControlDrawer({ motion }: { motion: MotionPrefs }) {
               {resolvedActCount} act{resolvedActCount === 1 ? "" : "s"}
               {scene.narrative.rotation.mode !== "off" ? ` · ${scene.narrative.rotation.dwellSec}s dwell` : ""}
             </div>
+            {scene.narrative.rotation.mode !== "off" && (
+              <div className="flex flex-wrap gap-1">
+                {(["dots", "hairline"] as const).map((indicator) => (
+                  <Btn
+                    key={indicator}
+                    active={scene.narrative.rotation.indicator === indicator}
+                    onClick={() =>
+                      applyOp({
+                        type: "setRotation",
+                        rotation: { ...scene.narrative.rotation, indicator },
+                      })
+                    }
+                  >
+                    {indicator}
+                  </Btn>
+                ))}
+              </div>
+            )}
             <div className="flex max-h-36 flex-col gap-1 overflow-y-auto">
               {scene.widgets.map((w) => (
                 <div key={w.id} className="flex items-center gap-2 text-xs">

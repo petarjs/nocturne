@@ -297,7 +297,7 @@ export const storyArcsScene: Scene = {
         dwellSec: 10,
       },
     ],
-    rotation: { mode: "story", dwellSec: 10, indicator: "hairline" },
+    rotation: { mode: "story", dwellSec: 10, indicator: "dots" },
   },
   widgets: [
     { id: "clock", type: "clock", data: fixtures.clock, state: "normal" },

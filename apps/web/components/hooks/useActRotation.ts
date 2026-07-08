@@ -102,7 +102,7 @@ export function useActRotation({
     actIndex: effectiveIndex,
     actCount: acts.length,
     dwellProgress,
-    indicatorVisible: enabled && rotation.indicator === "hairline" && !suppressed,
+    indicatorVisible: enabled && rotation.indicator !== "none" && !suppressed,
     indicatorPulse,
     rotationEnabled: enabled && !suppressed,
   };

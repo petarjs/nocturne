@@ -86,7 +86,12 @@ export function SettingsDrawer({ motion }: { motion: MotionPrefs }) {
                       rotation: {
                         ...scene.narrative.rotation,
                         mode,
-                        indicator: mode === "off" ? "none" : "hairline",
+                        indicator:
+                          mode === "off"
+                            ? "none"
+                            : scene.narrative.rotation.indicator === "none"
+                              ? "dots"
+                              : scene.narrative.rotation.indicator,
                       },
                     })
                   }
@@ -99,6 +104,24 @@ export function SettingsDrawer({ motion }: { motion: MotionPrefs }) {
               {resolvedActCount} act{resolvedActCount === 1 ? "" : "s"}
               {scene.narrative.rotation.mode !== "off" ? ` · ${scene.narrative.rotation.dwellSec}s dwell` : ""}
             </div>
+            {scene.narrative.rotation.mode !== "off" && (
+              <div className="flex flex-wrap gap-1">
+                {(["dots", "hairline"] as const).map((indicator) => (
+                  <Btn
+                    key={indicator}
+                    active={scene.narrative.rotation.indicator === indicator}
+                    onClick={() =>
+                      applyOp({
+                        type: "setRotation",
+                        rotation: { ...scene.narrative.rotation, indicator },
+                      })
+                    }
+                  >
+                    {indicator}
+                  </Btn>
+                ))}
+              </div>
+            )}
           </Section>
         )}
 

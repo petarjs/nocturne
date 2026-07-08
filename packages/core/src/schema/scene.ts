@@ -19,7 +19,7 @@ export type Act = z.infer<typeof actSchema>;
 export const rotationSchema = z.object({
   mode: z.enum(["off", "auto", "story"]),
   dwellSec: z.number().min(10).default(20),
-  indicator: z.enum(["none", "hairline"]),
+  indicator: z.enum(["none", "hairline", "dots"]),
 });
 
 export const narrativeSchema = z.object({
