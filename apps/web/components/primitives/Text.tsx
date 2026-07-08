@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { enterTransition } from "@/lib/dialects";
 import { useMotionDialect } from "@/lib/motion-context";
+import { parseMdLite, type MdToken } from "@/lib/mdLite";
 
 // The `text` primitive (§7.1): display face, masked word-stagger rise on update.
 export function Text({
@@ -11,15 +12,27 @@ export function Text({
   className = "",
   style,
   maxLines = 2,
+  markdown = false,
 }: {
   text: string;
   className?: string;
   style?: CSSProperties;
   maxLines?: number;
+  /** md-lite (§7.3 `text` preset): **bold** / *italic* only, no other markdown. */
+  markdown?: boolean;
 }) {
   const dialect = useMotionDialect();
   const [renderKey, setRenderKey] = useState(text);
-  const words = renderKey.split(/\s+/).filter(Boolean);
+  const tokens: MdToken[] = useMemo(
+    () =>
+      markdown
+        ? parseMdLite(renderKey)
+        : renderKey
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((w) => ({ text: w })),
+    [renderKey, markdown]
+  );
 
   useEffect(() => {
     if (text !== renderKey) setRenderKey(text);
@@ -44,7 +57,7 @@ export function Text({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       >
-        {words.map((word, i) => (
+        {tokens.map((tok, i) => (
           <motion.span
             key={`${renderKey}-${i}`}
             className="inline-block"
@@ -52,8 +65,14 @@ export function Text({
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={enterTransition(dialect, i)}
           >
-            {word}
-            {i < words.length - 1 ? "\u00a0" : ""}
+            {tok.bold ? (
+              <strong style={{ fontWeight: 600 }}>{tok.text}</strong>
+            ) : tok.em ? (
+              <em>{tok.text}</em>
+            ) : (
+              tok.text
+            )}
+            {i < tokens.length - 1 ? "\u00a0" : ""}
           </motion.span>
         ))}
       </motion.p>

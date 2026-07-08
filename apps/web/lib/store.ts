@@ -18,7 +18,7 @@ function freshLastUpdated(scene: Scene): Record<string, number> {
 function bootstrapSceneAlerts(scene: Scene): Scene {
   let next = scene;
   for (const widget of scene.widgets) {
-    if (widget.type === "statusGrid" && hasActiveAlertCondition(widget, widget.data)) {
+    if ((widget.type === "statusGrid" || widget.type === "table") && hasActiveAlertCondition(widget, widget.data)) {
       next = reduce(next, { type: "triggerMoment", id: widget.id, tier: "t3" }, { scenesByName: scenePresets });
       momentBus.trigger(widget.id, "t3");
     }

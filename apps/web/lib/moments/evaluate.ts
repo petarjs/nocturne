@@ -67,6 +67,56 @@ export function evaluateMoment(widget: Widget, prevData: unknown, nextData: unkn
     return "t0";
   }
 
+  if (widget.type === "barChart") {
+    const prev = parsePresetData("barChart", prevData);
+    const patch = nextData as { categories?: typeof prev.categories };
+    const nextCategories = patch.categories ?? prev.categories;
+    const prevTotal = prev.categories.reduce((a, c) => a + c.value, 0);
+    const nextTotal = nextCategories.reduce((a, c) => a + c.value, 0);
+    const change = pctDelta(prevTotal, nextTotal);
+    if (change >= 25) return "t2";
+    if (change >= 10) return "t1";
+    return "t0";
+  }
+
+  if (widget.type === "donut") {
+    const prev = parsePresetData("donut", prevData);
+    const patch = nextData as { segments?: typeof prev.segments };
+    const nextSegments = patch.segments ?? prev.segments;
+    const prevTotal = prev.segments.reduce((a, s) => a + s.value, 0);
+    const nextTotal = nextSegments.reduce((a, s) => a + s.value, 0);
+    const change = pctDelta(prevTotal, nextTotal);
+    if (change >= 25) return "t2";
+    if (change >= 10) return "t1";
+    return "t0";
+  }
+
+  if (widget.type === "table") {
+    const prev = parsePresetData("table", prevData);
+    const patch = nextData as { rows?: typeof prev.rows };
+    const nextRows = patch.rows ?? prev.rows;
+    const statusKeys = prev.columns.filter((c) => c.type === "status").map((c) => c.key);
+    const isDown = (v: unknown) =>
+      typeof v === "string" && ["down", "critical", "error", "offline"].includes(v.toLowerCase());
+    const hadDown = prev.rows.some((r) => statusKeys.some((k) => isDown(r[k])));
+    const hasDown = nextRows.some((r) => statusKeys.some((k) => isDown(r[k])));
+    if (!hadDown && hasDown) return "t3";
+    if (hadDown && !hasDown) return "t2";
+    return "t0";
+  }
+
+  if (widget.type === "ticker") {
+    const prev = parsePresetData("ticker", prevData);
+    const patch = nextData as { lines?: typeof prev.lines };
+    const nextLines = patch.lines ?? prev.lines;
+    const newest = nextLines[0];
+    const prevNewest = prev.lines[0];
+    const isNew = newest && (newest.t !== prevNewest?.t || newest.text !== prevNewest?.text);
+    if (isNew && newest.level === "error") return "t2";
+    if (isNew && newest.level === "warn") return "t1";
+    return "t0";
+  }
+
   return "t0";
 }
 
@@ -83,6 +133,15 @@ export function hasActiveAlertCondition(widget: Widget, data: unknown): boolean 
   if (widget.type === "gauge") {
     const d = parsePresetData("gauge", data);
     return d.crit !== undefined && d.value >= d.crit;
+  }
+  if (widget.type === "table") {
+    const d = parsePresetData("table", data);
+    const statusKeys = d.columns.filter((c) => c.type === "status").map((c) => c.key);
+    return d.rows.some((r) =>
+      statusKeys.some(
+        (k) => typeof r[k] === "string" && ["down", "critical", "error", "offline"].includes(r[k].toLowerCase())
+      )
+    );
   }
   return false;
 }

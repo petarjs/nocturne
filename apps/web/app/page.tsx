@@ -315,7 +315,7 @@ function DashboardRow({
             <a
               className={button}
               style={buttonBorder}
-              href={`/display?d=${encodeURIComponent(dash.slug)}`}
+              href={`/d/${encodeURIComponent(dash.slug)}`}
             >
               open
             </a>

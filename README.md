@@ -29,7 +29,7 @@ pnpm dev            # web on :3000 + server on :8787
 2. Create your **first API key** (open while zero keys exist; the first key
    closes that window — do this before exposing the tunnel).
 3. Create a dashboard (e.g. `living-room`) and click **open**, or go to
-   `http://localhost:3000/display?d=living-room`.
+   `http://localhost:3000/d/living-room`.
 4. Push data at it:
 
 ```bash
@@ -38,8 +38,9 @@ curl -X POST http://localhost:8787/v1/dashboards/living-room/widgets/cpu/data \
   -d '{"value":73}'
 ```
 
-Every browser on that dashboard updates live over WebSocket. Without `?d=` the
-display runs in local fixture mode (what the golden tests capture).
+Every browser on that dashboard updates live over WebSocket. `/display` (dev
+only, gated out of production builds) runs local fixture mode — what the
+golden tests capture.
 
 The demo runbook drives all six beats end-to-end:
 
@@ -48,6 +49,10 @@ NOCTURNE_KEY=noct_… ./scripts/beats.sh
 ```
 
 ## API
+
+For an LLM-agent-ready reference (endpoints, ops, widget schemas, moments,
+themes), see [AGENT_API.md](AGENT_API.md) — feed that file to whatever agent
+you're wiring up to a dashboard.
 
 All routes under `http://localhost:8787/v1`. Writes need
 `Authorization: Bearer noct_…`; reads are open unless the dashboard has a view
@@ -86,7 +91,7 @@ pnpm tunnel:web    # → https://<random>.trycloudflare.com  → :3000 (UI)
 Open the display through the web tunnel and point it at the API tunnel once:
 
 ```
-https://<web-tunnel>/display?d=living-room&api=https://<api-tunnel>
+https://<web-tunnel>/d/living-room?api=https://<api-tunnel>
 ```
 
 `?api=` persists to localStorage, so when the API tunnel URL rotates you only

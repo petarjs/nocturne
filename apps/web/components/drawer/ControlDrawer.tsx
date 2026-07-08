@@ -18,7 +18,21 @@ import { useFps } from "@/lib/fps";
 import type { MotionPrefs } from "@/lib/motion-prefs";
 
 const MOODS: Mood[] = ["ambient", "focus", "alert", "sleep"];
-const ADDABLE: PresetType[] = ["stat", "gauge", "timeseries", "statusGrid", "list", "clock", "headline"];
+const ADDABLE: PresetType[] = [
+  "stat",
+  "gauge",
+  "timeseries",
+  "barChart",
+  "donut",
+  "statusGrid",
+  "table",
+  "list",
+  "ticker",
+  "agenda",
+  "clock",
+  "headline",
+  "text",
+];
 const MOMENT_TIERS = ["t1", "t2", "t3"] as const;
 
 function growthPhase(h: number): string {

@@ -93,7 +93,8 @@ export function Chart({
 
       ctx.clearRect(0, 0, w, h);
 
-      const accent = getComputedStyle(canvas).getPropertyValue("--n-accent1").trim() || color;
+      const rawAccent = getComputedStyle(canvas).getPropertyValue("--n-accent1").trim();
+      const accent = isHexColor(rawAccent) ? rawAccent : isHexColor(color) ? color : FALLBACK_HEX;
 
       const breathe = reducedMotion
         ? 1
@@ -143,13 +144,20 @@ export function Chart({
   return <canvas ref={canvasRef} className={`block h-full w-full ${className}`} />;
 }
 
+const FALLBACK_HEX = "#5eead4";
+
+function isHexColor(value: string): boolean {
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value);
+}
+
+// `accent` is validated by the caller before reaching here, but this stays
+// defensive so a bad value degrades to a visible color instead of a thrown
+// CanvasGradient error (a raw "var(--n-accent1)" string is not a color).
 function withAlpha(cssColor: string, alpha: number): string {
-  if (cssColor.startsWith("#")) {
-    const hex = cssColor.slice(1);
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  }
-  return cssColor;
+  const hex = isHexColor(cssColor) ? cssColor : FALLBACK_HEX;
+  const full = hex.length === 4 ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}` : hex;
+  const r = parseInt(full.slice(1, 3), 16);
+  const g = parseInt(full.slice(3, 5), 16);
+  const b = parseInt(full.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

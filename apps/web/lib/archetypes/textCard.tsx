@@ -21,11 +21,14 @@ export function TextCard({
   text,
   kicker,
   tone = "neutral",
+  markdown = false,
 }: {
   slot: ArchetypeSlot;
   text: string;
   kicker?: string;
   tone?: "neutral" | "positive" | "negative";
+  /** md-lite (§7.3 `text` preset) — headline never sets this. */
+  markdown?: boolean;
 }) {
   const pad = surfacePadForSlot[slot];
 
@@ -35,6 +38,7 @@ export function TextCard({
         {kicker && <Label className="shrink-0">{kicker}</Label>}
         <Text
           text={text}
+          markdown={markdown}
           maxLines={1}
           className="min-w-0 font-medium"
           style={{ fontSize: headlineSizeForSlot.ambient, color: toneColor[tone] }}
@@ -50,6 +54,7 @@ export function TextCard({
       {kicker && <Label>{kicker}</Label>}
       <Text
         text={text}
+        markdown={markdown}
         maxLines={slot === "hero" ? 2 : 2}
         className="font-medium"
         style={{

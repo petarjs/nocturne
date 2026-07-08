@@ -15,15 +15,17 @@ import { useSceneStore } from "@/lib/store";
  * `still` is read separately by useMotionPrefs (§4.7 reduced-motion path) to
  * quiet idle/heartbeat motion; time itself is frozen test-side via Playwright's
  * clock API, so this file never touches the render loop.
+ *
+ * `/display` is local fixture mode only (dev + goldens, gated out of
+ * production); real dashboards live at `/d/<slug>` where the server owns the
+ * scene, so callers there pass `enabled: false`.
  */
-export function useUrlSceneBootstrap() {
+export function useUrlSceneBootstrap(enabled: boolean = true) {
   const applyOps = useSceneStore((s) => s.applyOps);
 
   useEffect(() => {
+    if (!enabled) return;
     const params = new URLSearchParams(window.location.search);
-    // Remote mode (?d=): the server owns the scene — URL scene/theme/mood
-    // params must not fight the incoming sync.
-    if (params.get("d")) return;
     const ops: Op[] = [];
 
     const scene = params.get("scene");
