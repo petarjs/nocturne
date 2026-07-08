@@ -13,7 +13,8 @@
 //     node scripts/push-crypto.mjs
 //
 // Everything can also come from env vars to skip the prompts (handy for
-// launchd/systemd units): NOCTURNE_API, NOCTURNE_DASH, NOCTURNE_KEY, COIN.
+// launchd/systemd units): NOCTURNE_API, NOCTURNE_DASH, NOCTURNE_KEY,
+// NOCTURNE_VIEW_CODE, COIN.
 
 import { prompt, promptSecret, ensureWidget, pushData } from "./lib/nocturne-client.mjs";
 
@@ -33,6 +34,7 @@ async function main() {
   const api = process.env.NOCTURNE_API || (await prompt("Nocturne API URL", "http://localhost:8787"));
   const dash = process.env.NOCTURNE_DASH || (await prompt("Dashboard slug"));
   const key = process.env.NOCTURNE_KEY || (await promptSecret("API key"));
+  const viewCode = process.env.NOCTURNE_VIEW_CODE || (await prompt("View code (blank if none)", ""));
   const coin = (process.env.COIN || (await prompt("Coin (CoinGecko id)", "bitcoin"))).toLowerCase();
 
   if (!dash || !key) {
@@ -54,7 +56,7 @@ async function main() {
     state: "normal",
   };
 
-  const created = await ensureWidget(api, dash, key, widget);
+  const created = await ensureWidget(api, dash, key, widget, viewCode);
   console.log(created ? `Created widget "${widgetId}".` : `Widget "${widgetId}" already exists — reusing it.`);
 
   console.log(`Pushing ${label} price to ${api} (${dash}) every ${POLL_MS / 1000}s. Ctrl+C to stop.`);

@@ -16,12 +16,20 @@ export async function promptSecret(question) {
   return prompt(question, undefined);
 }
 
-export async function getScene(api, dash, key) {
-  const res = await fetch(`${api}/v1/dashboards/${dash}/scene`, {
+export async function getScene(api, dash, key, viewCode) {
+  const url = new URL(`${api}/v1/dashboards/${dash}/scene`);
+  if (viewCode) url.searchParams.set("code", viewCode);
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${key}` },
   });
   if (!res.ok) {
-    throw new Error(`GET scene failed (${res.status}): ${await res.text()}`);
+    const body = await res.text();
+    if (res.status === 401 && body.includes("view_code_required")) {
+      throw new Error(
+        "GET scene failed (401): this dashboard requires a view code — set NOCTURNE_VIEW_CODE or answer the prompt"
+      );
+    }
+    throw new Error(`GET scene failed (${res.status}): ${body}`);
   }
   return res.json();
 }
@@ -55,8 +63,8 @@ export async function pushData(api, dash, key, widgetId, data) {
  * (ambient rail of the first act) — addWidget alone doesn't put it on screen,
  * the layout engine only draws widgets a narrative act references.
  */
-export async function ensureWidget(api, dash, key, widget) {
-  const scene = await getScene(api, dash, key);
+export async function ensureWidget(api, dash, key, widget, viewCode) {
+  const scene = await getScene(api, dash, key, viewCode);
   const exists = scene.widgets.some((w) => w.id === widget.id);
   if (!exists) {
     await applyOps(api, dash, key, [{ type: "addWidget", widget }]);

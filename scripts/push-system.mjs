@@ -7,7 +7,8 @@
 //
 //     node scripts/push-system.mjs
 //
-// Env vars skip the prompts: NOCTURNE_API, NOCTURNE_DASH, NOCTURNE_KEY.
+// Env vars skip the prompts: NOCTURNE_API, NOCTURNE_DASH, NOCTURNE_KEY,
+// NOCTURNE_VIEW_CODE.
 
 import { cpus, totalmem, freemem } from "node:os";
 import { prompt, promptSecret, ensureWidget, pushData } from "./lib/nocturne-client.mjs";
@@ -43,6 +44,7 @@ async function main() {
   const api = process.env.NOCTURNE_API || (await prompt("Nocturne API URL", "http://localhost:8787"));
   const dash = process.env.NOCTURNE_DASH || (await prompt("Dashboard slug"));
   const key = process.env.NOCTURNE_KEY || (await promptSecret("API key"));
+  const viewCode = process.env.NOCTURNE_VIEW_CODE || (await prompt("View code (blank if none)", ""));
 
   if (!dash || !key) {
     console.error("Dashboard slug and API key are required.");
@@ -64,8 +66,8 @@ async function main() {
     state: "normal",
   };
 
-  const createdCpu = await ensureWidget(api, dash, key, cpuWidget);
-  const createdMem = await ensureWidget(api, dash, key, memWidget);
+  const createdCpu = await ensureWidget(api, dash, key, cpuWidget, viewCode);
+  const createdMem = await ensureWidget(api, dash, key, memWidget, viewCode);
   console.log(createdCpu ? 'Created widget "cpu".' : 'Widget "cpu" already exists — reusing it.');
   console.log(createdMem ? 'Created widget "memory".' : 'Widget "memory" already exists — reusing it.');
 
