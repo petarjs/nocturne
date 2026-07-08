@@ -1,7 +1,8 @@
 "use client";
 
 import { ThemeScope } from "@/components/display/ThemeScope";
-import { ControlDrawer } from "@/components/drawer/ControlDrawer";
+import { TestControlDrawer } from "@/components/drawer/TestControlDrawer";
+import { SettingsDrawer } from "@/components/drawer/SettingsDrawer";
 import { Background } from "@/components/background/Background";
 import { Stage } from "@/components/layout/Stage";
 import { Clock } from "@/components/widgets/Clock";
@@ -118,7 +119,7 @@ function renderWidget(widget: Widget, slot: WidgetSlot) {
   }
 }
 
-function DisplayContent({ remote }: { remote: RemoteSync }) {
+function DisplayContent({ remote, isDev }: { remote: RemoteSync; isDev: boolean }) {
   const scene = useSceneStore((s) => s.scene);
   const lastUpdated = useSceneStore((s) => s.lastUpdated);
   const motion = useMotionPrefs();
@@ -209,7 +210,8 @@ function DisplayContent({ remote }: { remote: RemoteSync }) {
             )}
             {indicatorVisible && <ActIndicator progress={dwellProgress} pulse={indicatorPulse} />}
           </div>
-          {drawerOpen && <ControlDrawer motion={motion} />}
+          {drawerOpen &&
+            (isDev ? <TestControlDrawer motion={motion} /> : <SettingsDrawer motion={motion} />)}
         </div>
       </MotionDialectProvider>
     </ThemeScope>
@@ -232,7 +234,7 @@ export function DisplayView({ slug }: { slug: string | null }) {
 
   return (
     <ThemeMorphProvider targetTheme={theme} reducedMotion={motion.reducedMotion}>
-      <DisplayContent remote={remote} />
+      <DisplayContent remote={remote} isDev={slug === null} />
     </ThemeMorphProvider>
   );
 }

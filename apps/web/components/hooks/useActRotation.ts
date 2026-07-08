@@ -5,6 +5,7 @@ import type { Act, Mood, Widget } from "@nocturne/core";
 import type { Narrative } from "@nocturne/core";
 import { actHasWidget } from "@/lib/layout/actUtils";
 import { momentBus, type MomentEvent } from "@/lib/moments/bus";
+import { actNav, useActNavIndex } from "@/lib/layout/actNav";
 
 type Rotation = Narrative["rotation"];
 
@@ -25,7 +26,7 @@ export function useActRotation({
   widgets: Widget[];
   reducedMotion: boolean;
 }) {
-  const [actIndex, setActIndex] = useState(0);
+  const actIndex = useActNavIndex();
   const [dwellProgress, setDwellProgress] = useState(0);
   const [indicatorPulse, setIndicatorPulse] = useState(false);
   const dwellStartRef = useRef(performance.now());
@@ -49,7 +50,7 @@ export function useActRotation({
   const dwellMs = dwellSec * 1000;
 
   useEffect(() => {
-    setActIndex(0);
+    actNav.set(0);
     dwellStartRef.current = performance.now();
     setDwellProgress(0);
   }, [acts.length, rotation.mode]);
@@ -69,7 +70,7 @@ export function useActRotation({
       setDwellProgress(progress);
 
       if (progress >= 1 && pinnedIndex < 0) {
-        setActIndex((i) => i + 1);
+        actNav.set((i) => i + 1);
         dwellStartRef.current = performance.now();
       }
 

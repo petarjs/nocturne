@@ -6,6 +6,12 @@ import { useMotionDialect } from "@/lib/motion-context";
 import { useMomentFlash } from "@/lib/moment-flash-context";
 import { valueSpring, valueUpdateFlavor } from "@/lib/dialects";
 
+// §3.3: all numeric values render tabular. Locale grouping (thousands
+// separators) keeps large numbers glanceable without breaking alignment.
+function formatTabular(v: number, decimals: number) {
+  return v.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
 export function Value({
   value,
   decimals = 0,
@@ -42,10 +48,10 @@ export function Value({
   const prevValueRef = useRef(value);
   const [inkLift, setInkLift] = useState(false);
   const [inkBleed, setInkBleed] = useState(false);
-  const [text, setText] = useState(() => value.toFixed(decimals));
+  const [text, setText] = useState(() => formatTabular(value, decimals));
 
   useLayoutEffect(() => {
-    const format = (v: number) => setText(v.toFixed(decimals));
+    const format = (v: number) => setText(formatTabular(v, decimals));
     format(spring.get());
     return spring.on("change", format);
   }, [spring, decimals]);

@@ -15,6 +15,8 @@ import { setWidgetRole, widgetRole, type WidgetRole } from "@/lib/drawer/narrati
 import { resolveActs } from "@/lib/layout/resolveActs";
 import { useChaosEngine } from "@/lib/drawer/useChaos";
 import { useFps } from "@/lib/fps";
+import { actNav, useActNavIndex } from "@/lib/layout/actNav";
+import { Section, Btn } from "@/components/drawer/DrawerUI";
 import type { MotionPrefs } from "@/lib/motion-prefs";
 
 const MOODS: Mood[] = ["ambient", "focus", "alert", "sleep"];
@@ -42,37 +44,6 @@ function growthPhase(h: number): string {
   return "night";
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2 border-b border-white/6 pb-4">
-      <h3 className="n-label">{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-function Btn({
-  active,
-  onClick,
-  children,
-  className = "",
-}: {
-  active?: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-md border px-2 py-1 text-xs transition-colors ${active ? "border-[var(--n-accent1)] bg-[var(--n-accent1)]/15 text-[var(--n-text1)]" : "border-white/10 text-[var(--n-text2)] hover:border-white/20 hover:text-[var(--n-text1)]"} ${className}`}
-    >
-      {children}
-    </button>
-  );
-}
-
 function clearMomentState(applyOps: ReturnType<typeof useSceneStore.getState>["applyOps"], widgets: Widget[]) {
   momentBus.clearAlert();
   const resets = widgets
@@ -81,12 +52,20 @@ function clearMomentState(applyOps: ReturnType<typeof useSceneStore.getState>["a
   if (resets.length) applyOps(resets);
 }
 
-export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
+/**
+ * The dev/golden-frame test harness drawer (§10) — fixture scenes, chaos
+ * mode, moment triggers, manual act-switching. Local-fixture mode only
+ * (`/display`); the live `/d/<slug>` route renders `SettingsDrawer` instead.
+ */
+export function TestControlDrawer({ motion }: { motion: MotionPrefs }) {
   const scene = useSceneStore((s) => s.scene);
   const applyOp = useSceneStore((s) => s.applyOp);
   const applyOps = useSceneStore((s) => s.applyOps);
   const act = scene.narrative.acts[0];
-  const resolvedActCount = resolveActs(scene.narrative, scene.widgets).length;
+  const resolvedActs = resolveActs(scene.narrative, scene.widgets);
+  const resolvedActCount = resolvedActs.length;
+  const actIndex = useActNavIndex();
+  const activeActIndex = ((actIndex % resolvedActCount) + resolvedActCount) % resolvedActCount;
 
   const [selectedId, setSelectedId] = useState<string | null>(scene.widgets[0]?.id ?? null);
   const [chaos, setChaos] = useState(false);
@@ -186,7 +165,7 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
     <aside className="flex h-full w-[min(100vw,380px)] flex-col border-l border-white/8 bg-[rgb(8_12_22/0.92)] backdrop-blur-md">
       <header className="flex items-center justify-between border-b border-white/6 px-4 py-3">
         <div>
-          <div className="n-label">Control</div>
+          <div className="n-label">Control (test)</div>
           <div className="text-xs text-[var(--n-text2)]">` to close</div>
         </div>
         <div className="n-data text-sm tabular-nums text-[var(--n-accent1)]">{fps} fps</div>
@@ -198,7 +177,7 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
             {Object.keys(scenePresets).map((name) => (
               <Btn
                 key={name}
-                active={scene.name.toLowerCase() === name}
+                active={scene.name.toLowerCase() === name.toLowerCase()}
                 onClick={() => applyOp({ type: "loadScene", name })}
               >
                 {name}
@@ -300,6 +279,26 @@ export function ControlDrawer({ motion }: { motion: MotionPrefs }) {
                 </div>
               ))}
             </div>
+          </Section>
+        )}
+
+        {resolvedActCount > 1 && (
+          <Section title="Acts (test)">
+            <div className="flex flex-wrap gap-1">
+              {resolvedActs.map((_, i) => (
+                <Btn key={i} active={activeActIndex === i} onClick={() => actNav.set(i)}>
+                  act {i + 1}
+                </Btn>
+              ))}
+            </div>
+            <div className="flex gap-1">
+              <Btn onClick={() => actNav.set((i) => i - 1)}>‹ prev</Btn>
+              <Btn onClick={() => actNav.set((i) => i + 1)}>next ›</Btn>
+            </div>
+            <p className="text-[11px] text-[var(--n-text2)]/70">
+              Jumps the act immediately and resets the dwell timer — for testing story-arc
+              rotation without waiting it out.
+            </p>
           </Section>
         )}
 

@@ -52,7 +52,7 @@ async function main() {
     id: widgetId,
     type: "stat",
     title: label,
-    data: { label: `${label} / USD`, value: first.value, unit: "USD", delta: first.delta },
+    data: { label, value: first.value, unit: "$", delta: first.delta },
     state: "normal",
   };
 
@@ -72,7 +72,8 @@ async function main() {
     try {
       const { value, delta } = await fetchPrice(coin);
       await pushData(api, dash, key, widgetId, { value, delta });
-      console.log(`${new Date().toISOString()} ${label}: $${value} (${delta >= 0 ? "+" : ""}${delta.toFixed(2)}% 24h)`);
+      const formatted = value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      console.log(`${new Date().toISOString()} ${label}: $${formatted} (${delta >= 0 ? "+" : ""}${delta.toFixed(2)}% 24h)`);
     } catch (err) {
       console.error(`${new Date().toISOString()} error: ${err.message}`);
     }
