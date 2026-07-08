@@ -23,6 +23,8 @@ export function useStalenessWatcher(scene: Scene, lastUpdated: Record<string, nu
     const id = setInterval(() => {
       const now = Date.now();
       for (const widget of scene.widgets) {
+        if (widget.type === "clock") continue; // self-updates from local time, never receives pushData
+
         const ttlSec = widget.bind?.ttlSec ?? DEFAULT_TTL_SEC;
         const threshold = ttlSec * 2 * 1000;
         const since = now - (lastUpdated[widget.id] ?? now);
