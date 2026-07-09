@@ -18,6 +18,7 @@ export const backgroundEngineSchema = z.enum([
   "meadow",
   "borealis",
   "dunes",
+  "grass",
   "flat",
 ]);
 

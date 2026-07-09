@@ -1,0 +1,25 @@
+{
+  "name": "@nocturne/agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --import tsx src/index.ts",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.10",
+    "@ai-sdk/tui": "^1.0.18",
+    "@nocturne/core": "workspace:*",
+    "ai": "^7.0.18",
+    "culori": "^4.0.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/culori": "^4.0.1",
+    "@types/node": "^20",
+    "tsx": "^4",
+    "typescript": "^5"
+  }
+}

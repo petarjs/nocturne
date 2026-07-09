@@ -682,6 +682,285 @@ export const dunesFragmentShader = /* glsl */ `
   }
 `;
 
+// grass: 3D instanced blade field — tapered quads with vertex wind, soft
+// alpha edges, backlight coloring, plus a sky wash and a cheap bloom/trail
+// composite so the right side blows out like the long-exposure reference.
+// Used by GrassEngine (perspective camera in the field, not a 2D UV paint).
+
+export const grassBladeVertexShader = /* glsl */ `
+  attribute float aPhase;
+  attribute float aLean;
+  attribute float aHeight;
+  attribute float aWidth;
+  attribute float aShade;
+
+  uniform float uTime;
+  uniform float uWind;
+  uniform float uGust;
+  uniform vec3 uPulseOrigin[4];
+  uniform float uPulseAge[4];
+  uniform float uPulseStrength[4];
+
+  varying vec2 vUv;
+  varying float vShade;
+  varying float vHeight;
+  varying float vBacklit;
+  varying vec3 vWorldPos;
+
+  void main() {
+    vUv = uv;
+    vShade = aShade;
+    vHeight = position.y; // 0 root → 1 tip (pre-scale)
+
+    vec3 pos = position;
+    pos.x *= aWidth;
+    pos.y *= aHeight;
+
+    // tip bends more than root
+    float tip = pow(clamp(position.y, 0.0, 1.0), 1.65);
+    float t = uTime;
+    float windAmp = uWind * (0.55 + uGust * 0.85);
+
+    float sway =
+      sin(t * 0.85 + aPhase) * 0.55 +
+      sin(t * 1.55 + aPhase * 1.7) * 0.28 +
+      sin(t * 3.2 + aPhase * 3.1) * 0.12 * uGust +
+      sin(t * 0.35 + aPhase * 0.4) * 0.18;
+    sway *= windAmp * tip;
+
+    float nod =
+      cos(t * 0.7 + aPhase * 1.3) * 0.08 * windAmp * tip;
+
+    // lean the whole blade toward the light (+X)
+    float lean = aLean + sway;
+    pos.x += lean * tip * aHeight;
+    pos.z += nod * aHeight;
+    pos.y -= abs(sway) * 0.04 * tip * aHeight;
+
+    // instanceMatrix is injected by Three when rendering InstancedMesh
+    #ifdef USE_INSTANCING
+      vec3 root = (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    #else
+      vec3 root = vec3(0.0);
+    #endif
+
+    for (int i = 0; i < 4; i++) {
+      if (uPulseAge[i] < 0.0) continue;
+      float age = uPulseAge[i];
+      vec2 o = uPulseOrigin[i].xz;
+      float d = length(root.xz - o);
+      float wave = sin(d * 2.4 - age * 5.0) * exp(-d * 0.55 - age * 1.7);
+      pos.x += wave * uPulseStrength[i] * tip * 0.35;
+    }
+
+    #ifdef USE_INSTANCING
+      vec4 world = modelMatrix * instanceMatrix * vec4(pos, 1.0);
+    #else
+      vec4 world = modelMatrix * vec4(pos, 1.0);
+    #endif
+    vWorldPos = world.xyz;
+
+    // backlight factor: faces toward +X/+Y light read brighter at tips
+    vec3 toLight = normalize(vec3(4.5, 3.2, -1.0) - world.xyz);
+    vBacklit = clamp(dot(normalize(vec3(lean * 0.3, 1.0, 0.1)), toLight) * 0.5 + 0.5, 0.0, 1.0);
+
+    gl_Position = projectionMatrix * viewMatrix * world;
+  }
+`;
+
+export const grassBladeFragmentShader = /* glsl */ `
+  precision highp float;
+
+  uniform vec3 uGrassDeep;
+  uniform vec3 uGrassMid;
+  uniform vec3 uGrassLit;
+  uniform vec3 uGrassTip;
+  uniform vec3 uSunGlow;
+  uniform float uBloom;
+  uniform float uSun;
+  uniform float uMoon;
+
+  varying vec2 vUv;
+  varying float vShade;
+  varying float vHeight;
+  varying float vBacklit;
+  varying vec3 vWorldPos;
+
+  void main() {
+    // soft horizontal falloff — ethereal edges, never hard silhouettes
+    float edge = 1.0 - abs(vUv.x - 0.5) * 2.0;
+    float alpha = smoothstep(0.0, 0.45, edge);
+    alpha *= smoothstep(0.0, 0.08, vUv.y) * smoothstep(1.05, 0.72, vUv.y);
+    // tips thin out
+    alpha *= mix(1.0, 0.55, vHeight);
+    if (alpha < 0.01) discard;
+
+    float h = vHeight;
+    vec3 col = mix(uGrassDeep, uGrassMid, smoothstep(0.0, 0.45, h) * (0.55 + vShade * 0.45));
+    col = mix(col, uGrassLit, smoothstep(0.35, 0.85, h) * vBacklit);
+    col = mix(col, uGrassTip, pow(h, 2.2) * vBacklit * (0.35 + uBloom * 0.4));
+
+    // cream rim on backlit tips
+    float rim = pow(h, 2.8) * vBacklit * uBloom * (uSun + uMoon * 0.45);
+    col += uSunGlow * rim * 0.65;
+
+    // denser/darker blades on the -X (left) side of the field
+    float leftCrush = smoothstep(2.0, -3.5, vWorldPos.x);
+    col *= mix(1.0, 0.72, leftCrush);
+
+    gl_FragColor = vec4(col, alpha);
+  }
+`;
+
+export const grassSkyVertexShader = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+export const grassSkyFragmentShader = /* glsl */ `
+  precision highp float;
+
+  uniform vec3 uSkyTop;
+  uniform vec3 uSkyMid;
+  uniform vec3 uSkyHor;
+  uniform vec3 uSunGlow;
+  uniform vec3 uHaze;
+  uniform float uSun;
+  uniform float uMoon;
+  uniform float uStars;
+  uniform float uBloom;
+  uniform vec2 uSunDir; // xz direction of light in view-ish space, 0..1 mapped
+
+  varying vec2 vUv;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  }
+
+  void main() {
+    vec2 uv = vUv;
+    float lightX = smoothstep(0.0, 1.0, uv.x);
+    float lightY = smoothstep(0.0, 1.0, uv.y);
+
+    vec3 sky = mix(uSkyHor, uSkyMid, lightY * 0.7 + lightX * 0.3);
+    sky = mix(sky, uSkyTop, lightX * lightY);
+
+    vec2 lightPos = vec2(0.78, 0.72);
+    float sunDist = length((uv - lightPos) * vec2(1.4, 1.0));
+    float bloom = exp(-sunDist * sunDist * 2.2) * uBloom;
+    float bloomWide = exp(-sunDist * 0.9) * uBloom * 0.55;
+
+    sky = mix(sky, uSunGlow, bloom * 0.75 * (uSun + uMoon * 0.5));
+    sky += uSunGlow * bloomWide * 0.5 * (uSun + uMoon * 0.4);
+    sky = mix(sky, uHaze, bloomWide * 0.22);
+
+    if (uSun > 0.02) {
+      sky += uSunGlow * exp(-sunDist * sunDist * 32.0) * 1.1 * uSun;
+    }
+    if (uMoon > 0.02) {
+      float md = length((uv - vec2(0.74, 0.80)) * vec2(1.3, 1.0));
+      sky += uSunGlow * exp(-md * md * 60.0) * 0.8 * uMoon;
+    }
+    if (uStars > 0.01) {
+      float star = step(0.997, hash(floor(uv * 420.0)));
+      star *= hash(floor(uv * 420.0) + 19.0);
+      sky += vec3(0.85, 0.9, 1.0) * star * uStars * lightY;
+    }
+
+    gl_FragColor = vec4(sky, 1.0);
+  }
+`;
+
+// Fullscreen triangle for post passes (NDC)
+export const grassPostVertexShader = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = position.xy * 0.5 + 0.5;
+    gl_Position = vec4(position.xy, 0.0, 1.0);
+  }
+`;
+
+export const grassBrightFragmentShader = /* glsl */ `
+  precision highp float;
+  uniform sampler2D tDiffuse;
+  uniform float uThreshold;
+  varying vec2 vUv;
+  void main() {
+    vec4 c = texture2D(tDiffuse, vUv);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+    float m = smoothstep(uThreshold, uThreshold + 0.35, lum);
+    // bias toward the lit (right) side so the cream wash blooms harder
+    m *= mix(0.55, 1.25, smoothstep(0.2, 0.95, vUv.x));
+    gl_FragColor = vec4(c.rgb * m, 1.0);
+  }
+`;
+
+export const grassBlurFragmentShader = /* glsl */ `
+  precision highp float;
+  uniform sampler2D tDiffuse;
+  uniform vec2 uDirection;
+  uniform vec2 uRes;
+  varying vec2 vUv;
+  void main() {
+    vec2 px = uDirection / uRes;
+    vec3 c = texture2D(tDiffuse, vUv).rgb * 0.227027;
+    c += texture2D(tDiffuse, vUv + px * 1.0).rgb * 0.1945946;
+    c += texture2D(tDiffuse, vUv - px * 1.0).rgb * 0.1945946;
+    c += texture2D(tDiffuse, vUv + px * 2.0).rgb * 0.1216216;
+    c += texture2D(tDiffuse, vUv - px * 2.0).rgb * 0.1216216;
+    c += texture2D(tDiffuse, vUv + px * 3.0).rgb * 0.054054;
+    c += texture2D(tDiffuse, vUv - px * 3.0).rgb * 0.054054;
+    gl_FragColor = vec4(c, 1.0);
+  }
+`;
+
+export const grassCompositeFragmentShader = /* glsl */ `
+  precision highp float;
+  uniform sampler2D tScene;
+  uniform sampler2D tBloom;
+  uniform sampler2D tTrail;
+  uniform float uBloomStrength;
+  uniform float uTrailMix;
+  uniform float uVignette;
+  uniform vec3 uVignetteColor;
+  uniform float uDim;
+  uniform vec2 uDrift;
+  uniform vec2 uRes;
+  uniform float uTime;
+  varying vec2 vUv;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  }
+
+  void main() {
+    vec2 uv = vUv + uDrift / max(uRes, vec2(1.0));
+    vec3 scene = texture2D(tScene, uv).rgb;
+    vec3 bloom = texture2D(tBloom, uv).rgb;
+    vec3 trail = texture2D(tTrail, uv).rgb;
+
+    // long-exposure smear: previous frame ghosts along the sway
+    vec3 col = mix(scene, trail, uTrailMix);
+    col += bloom * uBloomStrength;
+
+    // right-side cream lift
+    float wash = smoothstep(0.35, 1.0, uv.x);
+    col = mix(col, col + bloom * 0.35, wash * 0.45);
+
+    col += (hash(uv * uRes + uTime) - 0.5) * 0.035;
+
+    vec2 d = abs(uv - 0.5) * 2.0;
+    float edge = smoothstep(0.55, 1.0, max(d.x, d.y));
+    col = mix(col, col * uVignetteColor, uVignette * edge);
+    col *= uDim;
+
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
 // gridHorizon (§5.2): perspective floor, fog, sparse stars. Preset `sunset`
 // adds the striped Synthwave sun disc at the horizon.
 export const gridHorizonFragmentShader = /* glsl */ `

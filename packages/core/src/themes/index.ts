@@ -5,8 +5,9 @@ import { noir } from "./noir";
 import { meadow } from "./meadow";
 import { borealis } from "./borealis";
 import { dunes } from "./dunes";
+import { grass } from "./grass";
 
-export { observatory, kanso, noir, meadow, borealis, dunes };
+export { observatory, kanso, noir, meadow, borealis, dunes, grass };
 export { fontFamilyVars, resolveFontVar } from "./fonts";
 
 export const themePresets: Record<string, ThemeTokens> = {
@@ -16,6 +17,7 @@ export const themePresets: Record<string, ThemeTokens> = {
   meadow,
   borealis,
   dunes,
+  grass,
 };
 
 export function resolveTheme(theme: ThemeTokens | { preset: string }): ThemeTokens {
