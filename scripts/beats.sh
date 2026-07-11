@@ -13,14 +13,14 @@
 #     NOCTURNE_KEY=noct_… ./scripts/beats.sh            # run every beat
 #     NOCTURNE_KEY=noct_… source scripts/beats.sh; beat5 # fire one beat
 #
-# Env: NOCTURNE_API (default http://localhost:8787), NOCTURNE_DASH (default
+# Env: NOCTURNE_API (default http://localhost:9876), NOCTURNE_DASH (default
 # living-room), NOCTURNE_KEY (required — create one at http://localhost:3000).
 #
 # Beat 2 (Summon) is intentionally absent — it's the MCP path, Phase B (§11).
 
 set -euo pipefail
 
-API="${NOCTURNE_API:-http://localhost:8787}"
+API="${NOCTURNE_API:-http://localhost:9876}"
 DASH="${NOCTURNE_DASH:-living-room}"
 OPS="$API/v1/dashboards/$DASH/ops"
 

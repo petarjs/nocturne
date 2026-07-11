@@ -87,7 +87,7 @@ push data, the display decides how loudly to react.
 
 ## Base URL and auth
 
-All routes are under `{API_URL}/v1` (locally `http://localhost:8787/v1`).
+All routes are under `{API_URL}/v1` (locally `http://localhost:9876/v1`).
 
 - **Reads** (`GET .../scene`, `GET /v1/dashboards`) are open, unless the
   dashboard has a *view code* set, in which case pass `?code=<code>` or the

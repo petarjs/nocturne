@@ -21,7 +21,7 @@ cp apps/agent/.env.example apps/agent/.env      # then fill in ANTHROPIC_API_KEY
 You need the server running and a dashboard to target:
 
 ```bash
-pnpm dev:server            # Nocturne API on :8787
+pnpm dev:server            # Nocturne API on :9876
 # open the display for the dashboard on your TV/browser:
 #   http://localhost:3000/d/living-room
 ```
@@ -66,7 +66,7 @@ node --env-file=apps/agent/.env --import tsx apps/agent/src/index.ts
 | `-m, --model <id>` | `NOCTURNE_AGENT_MODEL` | `claude-sonnet-5` |
 | `--tick-model <id>` | `NOCTURNE_TICK_MODEL` | = model |
 | `--interval <30s\|10m\|1h>` | `NOCTURNE_TICK_INTERVAL` | `10m` |
-| `--api <url>` | `NOCTURNE_API` | `http://localhost:8787` |
+| `--api <url>` | `NOCTURNE_API` | `http://localhost:9876` |
 | `--web <url>` | `NOCTURNE_WEB` | `http://localhost:3000` |
 | `--once` | — | run one tick and exit |
 | `--dry-run` | — | validate + print ops, don't send |

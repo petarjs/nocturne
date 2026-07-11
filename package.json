@@ -12,7 +12,7 @@
     "typecheck": "pnpm -r typecheck",
     "test:golden": "pnpm --filter @nocturne/web test:golden",
     "test:golden:update": "pnpm --filter @nocturne/web test:golden:update",
-    "tunnel": "cloudflared tunnel --url http://localhost:8787",
+    "tunnel": "cloudflared tunnel --url http://localhost:9876",
     "tunnel:web": "cloudflared tunnel --url http://localhost:3000"
   }
 }

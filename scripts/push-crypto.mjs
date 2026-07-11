@@ -31,7 +31,7 @@ async function fetchPrice(coin) {
 }
 
 async function main() {
-  const api = process.env.NOCTURNE_API || (await prompt("Nocturne API URL", "http://localhost:8787"));
+  const api = process.env.NOCTURNE_API || (await prompt("Nocturne API URL", "http://localhost:9876"));
   const dash = process.env.NOCTURNE_DASH || (await prompt("Dashboard slug"));
   const key = process.env.NOCTURNE_KEY || (await promptSecret("API key"));
   const viewCode = process.env.NOCTURNE_VIEW_CODE || (await prompt("View code (blank if none)", ""));

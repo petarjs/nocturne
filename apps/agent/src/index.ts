@@ -26,18 +26,11 @@ async function main(): Promise<void> {
     tools,
     which: "agent",
   });
-  // AI SDK surfaces stream errors via onError (its default just dumps the raw
-  // error to the console); capture it and rethrow for clean formatting.
-  let streamError: unknown;
-  const result = await agent.stream({
-    prompt: cfg.prompt ?? "",
-    onError: (e: { error: unknown }) => {
-      streamError = e.error;
-    },
-  });
-  for await (const chunk of result.textStream) process.stdout.write(chunk);
-  process.stdout.write("\n");
-  if (streamError) throw streamError;
+  // generate() runs the full tool loop and throws on model errors (unlike
+  // stream(), whose errors are swallowed onto the stream) — so main()'s catch
+  // formats them. Live token streaming only matters for the interactive TUI.
+  const { text } = await agent.generate({ prompt: cfg.prompt ?? "" });
+  process.stdout.write(`${text}\n`);
 }
 
 main().catch((err: unknown) => {

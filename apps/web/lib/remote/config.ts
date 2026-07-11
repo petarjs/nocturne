@@ -2,10 +2,10 @@
  * Where the Nocturne server lives and what credentials this browser holds.
  * Resolution order for the API URL: `?api=` query param (persisted, so a
  * rotating quick-tunnel URL needs setting once) → localStorage →
- * NEXT_PUBLIC_API_URL → localhost:8787. All storage access is best-effort:
+ * NEXT_PUBLIC_API_URL → localhost:9876. All storage access is best-effort:
  * a wall display in a locked-down kiosk may not have localStorage.
  */
-const DEFAULT_API_URL = "http://localhost:8787";
+const DEFAULT_API_URL = "http://localhost:9876";
 
 const LS_API_URL = "nocturne:apiUrl";
 const LS_API_KEY = "nocturne:apiKey";

@@ -25,9 +25,8 @@ export async function runTick(cfg: Config): Promise<void> {
       which: "tick",
     });
     process.stdout.write(`\n[${new Date().toISOString()}] tick…\n`);
-    const result = await agent.stream({ prompt: TICK_PROMPT });
-    for await (const chunk of result.textStream) process.stdout.write(chunk);
-    process.stdout.write("\n");
+    const { text } = await agent.generate({ prompt: TICK_PROMPT });
+    process.stdout.write(`${text}\n`);
   };
 
   await runOnce();

@@ -476,7 +476,7 @@ export default function AdminPage() {
           <DashboardsPanel hasKey={hasKey} />
 
           <footer className="n-label opacity-40">
-            push data: curl -X POST {apiUrl || "http://localhost:8787"}
+            push data: curl -X POST {apiUrl || "http://localhost:9876"}
             /v1/dashboards/&lt;slug&gt;/widgets/&lt;id&gt;/data -H &quot;Authorization: Bearer
             $KEY&quot; -d &apos;{"{"}&quot;value&quot;:73{"}"}&apos;
           </footer>

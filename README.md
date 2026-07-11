@@ -5,7 +5,7 @@ curl one-liner) render onto. The full product spec lives in [CLAUDE.md](CLAUDE.m
 
 ```
 apps/web        Next.js display + admin UI          :3000
-apps/server     Hono on workerd (wrangler dev)      :8787
+apps/server     Hono on workerd (wrangler dev)      :9876
                 ├─ SceneDO    one Durable Object per dashboard: scene, op log,
                 │             view code, live WebSockets
                 └─ RegistryDO dashboard index + hashed API keys
@@ -22,7 +22,7 @@ if you ever want it hosted.
 
 ```bash
 pnpm install
-pnpm dev            # web on :3000 + server on :8787
+pnpm dev            # web on :3000 + server on :9876
 ```
 
 1. Open http://localhost:3000 — the admin page.
@@ -33,7 +33,7 @@ pnpm dev            # web on :3000 + server on :8787
 4. Push data at it:
 
 ```bash
-curl -X POST http://localhost:8787/v1/dashboards/living-room/widgets/cpu/data \
+curl -X POST http://localhost:9876/v1/dashboards/living-room/widgets/cpu/data \
   -H "Authorization: Bearer $NOCTURNE_KEY" \
   -d '{"value":73}'
 ```
@@ -54,7 +54,7 @@ For an LLM-agent-ready reference (endpoints, ops, widget schemas, moments,
 themes), see [AGENT_API.md](AGENT_API.md) — feed that file to whatever agent
 you're wiring up to a dashboard.
 
-All routes under `http://localhost:8787/v1`. Writes need
+All routes under `http://localhost:9876/v1`. Writes need
 `Authorization: Bearer noct_…`; reads are open unless the dashboard has a view
 code (`?code=` or `X-Nocturne-View-Code`).
 
@@ -84,7 +84,7 @@ WebSockets work through cloudflared unchanged (`brew install cloudflared`).
 **Quick tunnels** (zero config; URLs rotate every run):
 
 ```bash
-pnpm tunnel        # → https://<random>.trycloudflare.com  → :8787 (API)
+pnpm tunnel        # → https://<random>.trycloudflare.com  → :9876 (API)
 pnpm tunnel:web    # → https://<random>.trycloudflare.com  → :3000 (UI)
 ```
 
@@ -106,7 +106,7 @@ tunnel: <tunnel-id>
 credentials-file: /Users/you/.cloudflared/<tunnel-id>.json
 ingress:
   - hostname: api.example.com
-    service: http://localhost:8787
+    service: http://localhost:9876
   - hostname: dash.example.com
     service: http://localhost:3000
   - service: http_status:404
