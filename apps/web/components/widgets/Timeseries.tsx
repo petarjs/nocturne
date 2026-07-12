@@ -8,7 +8,7 @@ export function Timeseries({
   label,
   series,
   window: windowLabel,
-  unit = "Mbps",
+  unit,
 }: {
   slot?: WidgetSlot;
   label: string;

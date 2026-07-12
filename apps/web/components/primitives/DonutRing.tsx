@@ -30,7 +30,7 @@ export function DonutRing({
   const t1Pulse = flash?.tier === "t1";
   const sw = strokeWidth ?? Math.max(6, Math.round(size * 0.12));
   const radius = (size - sw) / 2;
-  const total = Math.max(1, segments.reduce((a, s) => a + s.value, 0));
+  const total = Math.max(1, segments.reduce((a, s) => a + Math.max(0, s.value), 0));
   const phase = idlePhase(id);
   const cycle = idleCycleSec(id);
 
@@ -38,7 +38,7 @@ export function DonutRing({
     const out: (Segment & { frac: number; start: number })[] = [];
     let acc = 0;
     for (const s of segments) {
-      const frac = s.value / total;
+      const frac = Math.max(0, s.value) / total;
       out.push({ ...s, frac, start: acc });
       acc += frac;
     }
@@ -61,7 +61,7 @@ export function DonutRing({
       <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={sw} />
       {fractions.map((s, i) => (
         <motion.circle
-          key={s.label}
+          key={`${s.label}-${i}`}
           cx={size / 2}
           cy={size / 2}
           r={radius}

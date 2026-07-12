@@ -1,5 +1,6 @@
 import { Label } from "@/components/primitives/Label";
 import { Stream } from "@/components/primitives/Stream";
+import { EmptyState } from "@/components/primitives/EmptyState";
 import type { ArchetypeSlot } from "./types";
 import { surfacePadForSlot } from "./types";
 
@@ -22,13 +23,15 @@ export function StreamCard({
     return (
       <div className={`n-surface flex h-full w-full items-center gap-3 overflow-hidden ${pad}`}>
         {label && <Label className="w-16 shrink-0 leading-tight">{label}</Label>}
-        {latest && (
+        {latest ? (
           <span
             className="n-data min-w-0 flex-1 truncate text-[length:var(--n-meta-size)]"
             style={{ color: "var(--n-text2)" }}
           >
             {latest.text}
           </span>
+        ) : (
+          <EmptyState compact />
         )}
       </div>
     );
@@ -37,7 +40,7 @@ export function StreamCard({
   return (
     <div className={`n-surface flex h-full w-full flex-col gap-3 overflow-hidden ${pad} ${slot === "hero" ? "n-surface--hero" : ""}`}>
       {label && <Label>{label}</Label>}
-      <Stream lines={lines} maxVisible={slot === "hero" ? 10 : 6} />
+      {lines.length > 0 ? <Stream lines={lines} maxVisible={slot === "hero" ? 10 : 6} /> : <EmptyState />}
     </div>
   );
 }

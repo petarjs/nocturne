@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { themeTokensSchema, backgroundEngineSchema } from "./theme";
-import { widgetSchema } from "./widget";
+import { widgetPatchSchema, widgetSchema } from "./widget";
 import { narrativeSchema, actSchema, rotationSchema, moodSchema, sceneSchema } from "./scene";
 
 export const opSchema = z.discriminatedUnion("type", [
@@ -12,7 +12,7 @@ export const opSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("updateWidget"),
     id: z.string(),
-    patch: widgetSchema.partial().omit({ id: true }),
+    patch: widgetPatchSchema,
   }),
   z.object({ type: z.literal("pinWidget"), id: z.string(), pinned: z.boolean() }),
   z.object({ type: z.literal("setTheme"), theme: z.union([themeTokensSchema, z.object({ preset: z.string() })]) }),

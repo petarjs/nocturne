@@ -34,6 +34,10 @@ const ADDABLE: PresetType[] = [
   "clock",
   "headline",
   "text",
+  "nowPlaying",
+  "weather",
+  "image",
+  "video",
 ];
 const MOMENT_TIERS = ["t1", "t2", "t3"] as const;
 

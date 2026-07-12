@@ -3,6 +3,7 @@ import { Label } from "@/components/primitives/Label";
 import { Value } from "@/components/primitives/Value";
 import { Delta } from "@/components/primitives/Delta";
 import { Dot } from "@/components/primitives/Dot";
+import { EmptyState } from "@/components/primitives/EmptyState";
 import type { ArchetypeSlot } from "./types";
 import { surfacePadForSlot } from "./types";
 
@@ -71,16 +72,16 @@ export function TableCard({
   rows: Row[];
 }) {
   const pad = surfacePadForSlot[slot];
-  const gridTemplate = `2fr repeat(${Math.max(1, columns.length - 1)}, 1fr)`;
+  const gridTemplate = columns.length > 1 ? `2fr repeat(${columns.length - 1}, 1fr)` : "1fr";
   const keyOf = (row: Row, i: number) => String(row[columns[0]?.key ?? ""] ?? i);
 
   if (slot === "ambient") {
-    const visible = rows.slice(0, 4);
+    const visible = rows.slice(0, 1);
     return (
       <div className={`n-surface flex h-full w-full items-center gap-3 overflow-hidden ${pad}`}>
         {label && <Label className="w-16 shrink-0 leading-tight">{label}</Label>}
         <div className="flex min-w-0 flex-1 items-center justify-end gap-4 overflow-hidden">
-          {visible.map((row, i) => (
+          {visible.length === 0 ? <EmptyState compact /> : visible.map((row, i) => (
             <span key={keyOf(row, i)} className="flex shrink-0 items-baseline gap-1.5">
               <span className="n-data text-[12px]">{String(row[columns[0]?.key ?? ""] ?? "")}</span>
               {columns[1] && (
@@ -90,6 +91,7 @@ export function TableCard({
               )}
             </span>
           ))}
+          {rows.length > 1 && <Label className="shrink-0">+{rows.length - 1}</Label>}
         </div>
       </div>
     );
@@ -98,14 +100,17 @@ export function TableCard({
   return (
     <div className={`n-surface flex h-full w-full flex-col gap-2 overflow-hidden ${pad} ${slot === "hero" ? "n-surface--hero" : ""}`}>
       {label && <Label>{label}</Label>}
-      <div className="grid shrink-0 gap-x-3 pb-1" style={{ gridTemplateColumns: gridTemplate }}>
-        {columns.map((col) => (
+      {columns.length > 0 && (
+        <div className="grid shrink-0 gap-x-3 pb-1" style={{ gridTemplateColumns: gridTemplate }}>
+          {columns.map((col) => (
           <Label key={col.key} className={col.type === "text" ? "" : "text-right"}>
             {col.label}
           </Label>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
+        {(columns.length === 0 || rows.length === 0) && <EmptyState />}
         <AnimatePresence initial={false}>
           {rows.map((row, i) => (
             <motion.div

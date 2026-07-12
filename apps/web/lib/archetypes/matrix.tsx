@@ -1,5 +1,6 @@
 import { Label } from "@/components/primitives/Label";
 import { Dot } from "@/components/primitives/Dot";
+import { EmptyState } from "@/components/primitives/EmptyState";
 import type { ArchetypeSlot } from "./types";
 import { surfacePadForSlot } from "./types";
 
@@ -44,41 +45,6 @@ function StatusRow({
   );
 }
 
-/** Compact cell for the ambient rail — fills height, name left / metric right. */
-function AmbientStatusCell({ item }: { item: StatusItem }) {
-  const isDown = item.state === "down";
-
-  return (
-    <div
-      className={`flex h-full min-w-0 items-center justify-between gap-2 rounded-[calc(var(--n-radius)-2px)] px-2 ${
-        isDown ? "bg-[var(--n-negative)]/8" : ""
-      }`}
-    >
-      <div className="flex min-w-0 items-center gap-2">
-        <Dot state={item.state} size="md" />
-        <span className={`n-data min-w-0 truncate text-[length:var(--n-meta-size)] ${isDown ? "font-medium" : ""}`}>
-          {item.label}
-        </span>
-      </div>
-      {isDown ? (
-        <span
-          className="n-data shrink-0 text-[length:calc(var(--n-meta-size)*0.85)] font-medium uppercase tracking-wider"
-          style={{ color: "var(--n-negative)" }}
-        >
-          down
-        </span>
-      ) : item.latency !== undefined ? (
-        <span
-          className="n-data shrink-0 text-[length:var(--n-meta-size)] tabular-nums"
-          style={{ color: "var(--n-text1)", opacity: 0.7 }}
-        >
-          {item.latency}ms
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
 /** matrix archetype (§7.2): status dots + labels in a grid. */
 export function Matrix({
   slot,
@@ -101,16 +67,34 @@ export function Matrix({
     : items;
 
   if (slot === "ambient") {
+    const downCount = sorted.filter((item) => item.state === "down").length;
+    const degradedCount = sorted.filter((item) => item.state === "degraded").length;
+    const summaryState = downCount > 0 ? "down" : degradedCount > 0 ? "degraded" : "up";
+    const summary =
+      downCount > 0
+        ? `${downCount} down`
+        : degradedCount > 0
+          ? `${degradedCount} degraded`
+          : `${sorted.length} up`;
+
     return (
-      <div className={`n-surface flex h-full w-full items-stretch gap-4 overflow-hidden ${pad}`}>
+      <div className={`n-surface flex h-full w-full items-center gap-3 overflow-hidden ${pad}`}>
         {label && (
-          <Label className="flex shrink-0 items-center self-center leading-none">{label}</Label>
+          <Label className="min-w-0 flex-1 truncate leading-none">{label}</Label>
         )}
-        <div className="grid h-full min-h-0 min-w-0 flex-1 grid-cols-3 grid-rows-2 gap-x-4 gap-y-0">
-          {sorted.map((item) => (
-            <AmbientStatusCell key={item.id} item={item} />
-          ))}
-        </div>
+        {sorted.length > 0 ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <Dot state={summaryState} size="md" />
+            <span
+              className="n-data whitespace-nowrap text-[length:var(--n-meta-size)]"
+              style={{ color: summaryState === "down" ? "var(--n-negative)" : "var(--n-text1)" }}
+            >
+              {summary}
+            </span>
+          </div>
+        ) : (
+          <EmptyState compact />
+        )}
       </div>
     );
   }
@@ -139,6 +123,11 @@ export function Matrix({
           </div>
         )}
         <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-x-6 gap-y-3 content-start">
+          {sorted.length === 0 && (
+            <div className="col-span-2 flex">
+              <EmptyState />
+            </div>
+          )}
           {rest.map((item) => (
             <StatusRow key={item.id} item={item} />
           ))}
@@ -151,6 +140,11 @@ export function Matrix({
     <div className={`n-surface flex h-full w-full flex-col gap-3 overflow-hidden ${pad}`}>
       {label && <Label>{label}</Label>}
       <div className="grid min-h-0 flex-1 grid-cols-2 gap-x-4 gap-y-2 content-start">
+        {sorted.length === 0 && (
+          <div className="col-span-2 flex">
+            <EmptyState />
+          </div>
+        )}
         {sorted.map((item) => (
           <StatusRow key={item.id} item={item} />
         ))}

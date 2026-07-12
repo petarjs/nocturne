@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">Abstract nocturnal landscape</title>
+  <desc id="desc">Layered indigo hills beneath a pale teal moon.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#11162a"/>
+      <stop offset="1" stop-color="#26314b"/>
+    </linearGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#364460"/>
+      <stop offset="1" stop-color="#172238"/>
+    </linearGradient>
+    <filter id="grain">
+      <feTurbulence baseFrequency="0.72" numOctaves="2" seed="11" type="fractalNoise"/>
+      <feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 .06 0"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="800" fill="url(#sky)"/>
+  <circle cx="885" cy="215" r="92" fill="#8de5d3" opacity=".84"/>
+  <path d="M0 560 190 395l142 128 180-224 218 265 185-171 285 227v180H0Z" fill="#2a3651"/>
+  <path d="M0 650 230 490l163 125 208-174 183 130 177-105 239 151v183H0Z" fill="url(#hill)"/>
+  <path d="M0 722 244 624l160 62 222-93 186 73 182-51 206 80v105H0Z" fill="#111a2d"/>
+  <rect width="1200" height="800" filter="url(#grain)" opacity=".75"/>
+</svg>

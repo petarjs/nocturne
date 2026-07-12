@@ -18,6 +18,11 @@ import { Table } from "@/components/widgets/Table";
 import { Ticker } from "@/components/widgets/Ticker";
 import { Agenda } from "@/components/widgets/Agenda";
 import { Text } from "@/components/widgets/Text";
+import { NowPlaying } from "@/components/widgets/NowPlaying";
+import { Weather } from "@/components/widgets/Weather";
+import { ImageWidget } from "@/components/widgets/Image";
+import { VideoWidget } from "@/components/widgets/Video";
+import { Composite } from "@/components/widgets/Composite";
 import { ActIndicator } from "@/components/display/ActIndicator";
 import { ActDots } from "@/components/display/ActDots";
 import type { Widget } from "@nocturne/core";
@@ -37,19 +42,45 @@ import { useUrlSceneBootstrap } from "@/lib/display/urlBootstrap";
 import { useRemoteSync, type RemoteSync } from "@/lib/remote/useRemoteSync";
 import { ViewCodeGate } from "@/components/display/ViewCodeGate";
 import { resolveTheme } from "@nocturne/core/themes";
+import { Component, type ReactNode } from "react";
 
-function FallbackWidget({ widget }: { widget: Widget }) {
+function WidgetMessage({ widget, message }: { widget: Widget; message: string }) {
   return (
-    <div className="n-surface flex h-full w-full flex-col gap-2">
+    <div className="n-surface flex h-full w-full flex-col justify-center gap-2 p-[var(--n-density-pad)]">
       <div className="n-label">{widget.title ?? widget.type}</div>
       <div className="n-data text-sm" style={{ color: "var(--n-text2)" }}>
-        preset not wired yet
+        {message}
       </div>
     </div>
   );
 }
 
-function renderWidget(widget: Widget, slot: WidgetSlot) {
+class WidgetErrorBoundary extends Component<
+  { widget: Widget; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidUpdate(previous: { widget: Widget }) {
+    if (this.state.failed && previous.widget.data !== this.props.widget.data) {
+      this.setState({ failed: false });
+    }
+  }
+
+  render() {
+    return this.state.failed ? (
+      <WidgetMessage widget={this.props.widget} message="Invalid widget data" />
+    ) : (
+      this.props.children
+    );
+  }
+}
+
+function WidgetContent({ widget, slot }: { widget: Widget; slot: WidgetSlot }) {
   switch (widget.type) {
     case "clock":
       return <Clock slot={slot} />;
@@ -115,9 +146,35 @@ function renderWidget(widget: Widget, slot: WidgetSlot) {
       const data = parsePresetData("text", widget.data);
       return <Text slot={slot} md={data.md} />;
     }
+    case "nowPlaying": {
+      const data = parsePresetData("nowPlaying", widget.data);
+      return <NowPlaying {...data} slot={slot} label={widget.title} />;
+    }
+    case "weather": {
+      const data = parsePresetData("weather", widget.data);
+      return <Weather {...data} slot={slot} label={widget.title} />;
+    }
+    case "image": {
+      const data = parsePresetData("image", widget.data);
+      return <ImageWidget {...data} slot={slot} label={widget.title} />;
+    }
+    case "video": {
+      const data = parsePresetData("video", widget.data);
+      return <VideoWidget {...data} slot={slot} label={widget.title} />;
+    }
+    case "composite":
+      return <Composite widget={widget} slot={slot} />;
     default:
-      return <FallbackWidget widget={widget} />;
+      return <WidgetMessage widget={widget} message="Unsupported widget" />;
   }
+}
+
+function renderWidget(widget: Widget, slot: WidgetSlot) {
+  return (
+    <WidgetErrorBoundary widget={widget}>
+      <WidgetContent widget={widget} slot={slot} />
+    </WidgetErrorBoundary>
+  );
 }
 
 function DisplayContent({ remote, isDev }: { remote: RemoteSync; isDev: boolean }) {

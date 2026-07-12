@@ -39,11 +39,13 @@ export const presetDataSchemas = {
     max: z.number(),
     warn: z.number().optional(),
     crit: z.number().optional(),
+    unit: z.string().optional(),
   }),
   timeseries: z.object({
     label: z.string(),
     series: z.array(seriesPointSchema),
     window: z.string().optional(),
+    unit: z.string().optional(),
   }),
   barChart: z.object({
     label: z.string(),
@@ -110,6 +112,7 @@ export const presetDataSchemas = {
   text: z.object({ md: z.string() }),
   image: z.object({
     src: z.string(),
+    alt: z.string().optional(),
     fit: z.enum(["cover", "contain"]).default("cover"),
     kenBurns: z.boolean().optional(),
   }),
@@ -120,28 +123,9 @@ export const presetDataSchemas = {
   }),
 } as const;
 
-export const compositeSchema = z.object({
-  type: z.literal("composite"),
-  archetype: z.enum([
-    "heroValue",
-    "statRow",
-    "chartCard",
-    "matrix",
-    "tableCard",
-    "streamCard",
-    "textCard",
-    "mediaCard",
-    "splitCard",
-  ]),
-  slots: z.record(z.string(), z.unknown()),
-  data: z.unknown(),
-});
-
-export const widgetSchema = z.object({
+const widgetMetaSchema = z.object({
   id: z.string(),
-  type: z.union([presetTypeSchema, z.literal("composite")]),
   title: z.string().optional(),
-  data: z.unknown(),
   bind: z
     .object({
       source: z.string().optional(),
@@ -153,6 +137,40 @@ export const widgetSchema = z.object({
   state: z.enum(["normal", "attention", "critical", "stale"]).default("normal"),
   pinned: z.boolean().optional(),
 });
+
+export const compositeArchetypeSchema = z.enum([
+    "heroValue",
+    "statRow",
+    "chartCard",
+    "matrix",
+    "tableCard",
+    "streamCard",
+    "textCard",
+    "mediaCard",
+    "splitCard",
+]);
+
+export const compositeSchema = widgetMetaSchema.extend({
+  type: z.literal("composite"),
+  archetype: compositeArchetypeSchema,
+  slots: z.record(z.string(), z.unknown()),
+  data: z.unknown(),
+});
+
+const presetWidgetSchema = widgetMetaSchema.extend({
+  type: presetTypeSchema,
+  data: z.unknown(),
+});
+
+export const widgetSchema = z.union([presetWidgetSchema, compositeSchema]);
+
+/** Shape-only patch schema; the reducer applies it to an existing validated widget. */
+export const widgetPatchSchema = widgetMetaSchema
+  .partial()
+  .omit({ id: true })
+  .extend({
+    data: z.unknown().optional(),
+  });
 
 export type Widget = z.infer<typeof widgetSchema>;
 

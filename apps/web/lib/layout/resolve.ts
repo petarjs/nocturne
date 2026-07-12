@@ -116,12 +116,15 @@ function solveLandscape(act: Act): LayoutResult {
 
   if (hasAmbient) {
     const ambient = act.ambient.slice(0, COLS);
-    const width = Math.max(1, Math.floor(COLS / ambient.length));
+    const baseWidth = Math.floor(COLS / ambient.length);
+    const remainder = COLS % ambient.length;
+    let col = 0;
     ambient.forEach((id, i) => {
-      const col = i * width;
-      if (col + width <= COLS) {
-        result[id] = { col, row: ROWS - 1, colSpan: width, rowSpan: 1 };
-      }
+      // Spread remainder columns across the leading cells so the rail always
+      // uses the full width instead of leaving a dead strip on the right.
+      const width = baseWidth + (i < remainder ? 1 : 0);
+      result[id] = { col, row: ROWS - 1, colSpan: width, rowSpan: 1 };
+      col += width;
     });
   }
 

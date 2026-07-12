@@ -211,19 +211,18 @@ have more widgets than fit one screen, use multiple acts + `rotation.mode:
 }
 ```
 
-### Presets — **only the ones marked ✅ actually render today**
+### Presets
 
-Everything below is schema-validated by the server regardless, but the
-current display client only has renderers for the ✅ types; anything else
-shows a "preset not wired yet" placeholder. Build with ✅ types only until
-this note is removed.
+Every schema-defined preset below renders in the display client. Invalid data
+is contained to that widget and shown as a quiet error state instead of
+crashing the dashboard.
 
 | Preset | Renders? | `data` shape |
 |---|---|---|
 | `clock` | ✅ | `{}` — no data needed |
 | `stat` | ✅ | `{label, value, unit?, delta?, spark?: number[]}` |
-| `gauge` | ✅ | `{label, value, min, max, warn?, crit?}` |
-| `timeseries` | ✅ | `{label, series: [{t: number, v: number}], window?: string}` |
+| `gauge` | ✅ | `{label, value, min, max, warn?, crit?, unit?}` |
+| `timeseries` | ✅ | `{label, series: [{t: number, v: number}], window?: string, unit?: string}` |
 | `statusGrid` | ✅ | `{items: [{id, label, state: "up"\|"down"\|"degraded", latency?}]}` |
 | `list` | ✅ | `{items: [{id, label, value: string\|number}]}` |
 | `headline` | ✅ | `{text, kicker?, tone?: "neutral"\|"positive"\|"negative"}` — use this as the narrator, e.g. "All systems nominal" |
@@ -233,11 +232,11 @@ this note is removed.
 | `ticker` | ✅ | `{lines: [{t, text, level?}]}` |
 | `agenda` | ✅ | `{events: [{id, title, startsAt, endsAt}]}` |
 | `text` | ✅ | `{md: string}` |
-| `nowPlaying` | ✗ | `{title, artist, artUrl?, progress: 0-1, state: "playing"\|"paused"}` |
-| `weather` | ✗ | `{tempC, condition, hi, lo, hourly?}` |
-| `image` | ✗ | `{src, fit?, kenBurns?}` |
-| `video` | ✗ | `{src, poster, loop?}` |
-| `composite` | ✗ | not yet implemented client-side |
+| `nowPlaying` | ✅ | `{title, artist, artUrl?, progress: 0-1, state: "playing"\|"paused"}` |
+| `weather` | ✅ | `{tempC, condition, hi, lo, hourly?}` |
+| `image` | ✅ | `{src, alt?, fit?, kenBurns?}` |
+| `video` | ✅ | `{src, poster, loop?}` — video at tier 3, poster fallback below |
+| `composite` | ✅ | `{archetype, slots, data}` — data is validated against the selected archetype |
 
 ## Moments — how the display "notices" data
 

@@ -56,12 +56,14 @@ export const fixtures: Record<PresetType, unknown> = {
     max: 100,
     warn: 75,
     crit: 90,
+    unit: "%",
   },
 
   timeseries: {
     label: "Network Throughput",
     series: series(60, 40, 15),
     window: "1h",
+    unit: "Mbps",
   },
 
   barChart: {
@@ -167,14 +169,17 @@ export const fixtures: Record<PresetType, unknown> = {
   },
 
   image: {
-    src: "/fixtures/placeholder.jpg",
+    src: "/fixtures/placeholder.svg",
+    alt: "Abstract nocturnal landscape",
     fit: "cover",
     kenBurns: true,
   },
 
   video: {
-    src: "/fixtures/placeholder.mp4",
-    poster: "/fixtures/placeholder.jpg",
+    // The catalog intentionally exercises the tier-aware poster fallback;
+    // real dashboards provide their own direct video URL.
+    src: "",
+    poster: "/fixtures/placeholder.svg",
     loop: true,
   },
 };

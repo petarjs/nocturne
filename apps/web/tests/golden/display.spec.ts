@@ -19,6 +19,11 @@ import { test, expect, type Page } from "@playwright/test";
 
 const THEMES = ["observatory", "kanso", "noir"] as const;
 
+// These are GPU-backed visual captures. Running six WebGL pages at once can
+// starve one page's hydration/FLIP frame and produce a stable screenshot of
+// the wrong animation instant (Kanso ambient was the repeat offender).
+test.describe.configure({ mode: "serial" });
+
 type Frame = { mood: string; params: string };
 
 // A fixed instant so the clock, staleness math, and the Kanso growth

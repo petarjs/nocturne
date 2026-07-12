@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { enterTransition } from "@/lib/dialects";
 import { useMotionDialect } from "@/lib/motion-context";
@@ -22,26 +22,21 @@ export function Text({
   markdown?: boolean;
 }) {
   const dialect = useMotionDialect();
-  const [renderKey, setRenderKey] = useState(text);
   const tokens: MdToken[] = useMemo(
     () =>
       markdown
-        ? parseMdLite(renderKey)
-        : renderKey
+        ? parseMdLite(text)
+        : text
             .split(/\s+/)
             .filter(Boolean)
             .map((w) => ({ text: w })),
-    [renderKey, markdown]
+    [text, markdown]
   );
-
-  useEffect(() => {
-    if (text !== renderKey) setRenderKey(text);
-  }, [text, renderKey]);
 
   return (
     <AnimatePresence mode="wait">
       <motion.p
-        key={renderKey}
+        key={text}
         className={className}
         style={{
           fontFamily: "var(--n-font-display)",
@@ -59,7 +54,7 @@ export function Text({
       >
         {tokens.map((tok, i) => (
           <motion.span
-            key={`${renderKey}-${i}`}
+            key={`${text}-${i}`}
             className="inline-block"
             initial={{ opacity: 0, y: 10, filter: dialect === "ink" ? "blur(3px)" : "blur(0px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}

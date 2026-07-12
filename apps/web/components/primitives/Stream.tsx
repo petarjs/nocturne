@@ -28,7 +28,7 @@ export function Stream({
       <AnimatePresence initial={false}>
         {visible.map((line, i) => (
           <motion.div
-            key={`${line.t}-${line.text}`}
+            key={`${line.t}-${line.text}-${line.level ?? "info"}-${i}`}
             layout
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: Math.max(0.4, 1 - i * 0.15), y: 0 }}

@@ -45,7 +45,7 @@ export function GaugeArc({
   const pad = surfacePadForSlot[slot];
   const span = max - min || 1;
   const fraction = (value - min) / span;
-  const toFrac = (v: number) => (v - min) / span;
+  const toFrac = (v: number) => Math.max(0, Math.min(1, (v - min) / span));
 
   const zones = [
     warn !== undefined ? { at: toFrac(warn), color: "var(--n-accent1)" } : null,

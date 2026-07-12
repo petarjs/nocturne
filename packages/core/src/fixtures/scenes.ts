@@ -188,7 +188,7 @@ const cleanStatusGrid = {
   ],
 };
 
-// Every wired preset in one act pair — the fastest way to eyeball a theme or
+// Every wired preset across three acts — the fastest way to eyeball a theme or
 // dialect against the full catalog instead of the five-widget homelab set.
 // Split across two acts; the clock anchor travels between both. Each act
 // keeps to 2 supporting widgets — with an ambient rail present, resolveLayout
@@ -214,6 +214,11 @@ export const kitchenSinkScene: Scene = {
         supporting: ["log", "agenda"],
         ambient: ["clock", "note", "notes-md"],
       },
+      {
+        hero: "playing",
+        supporting: ["weather", "image"],
+        ambient: ["clock", "video", "composite-note"],
+      },
     ],
     rotation: { mode: "off", dwellSec: 20, indicator: "none" },
   },
@@ -231,6 +236,25 @@ export const kitchenSinkScene: Scene = {
     { id: "log", type: "ticker", title: "Log", data: fixtures.ticker, state: "normal" },
     { id: "agenda", type: "agenda", title: "Agenda", data: fixtures.agenda, state: "normal" },
     { id: "notes-md", type: "text", data: fixtures.text, state: "normal" },
+    {
+      id: "playing",
+      type: "nowPlaying",
+      title: "Now Playing",
+      data: { ...(fixtures.nowPlaying as Record<string, unknown>), artUrl: "/fixtures/placeholder.svg" },
+      state: "normal",
+    },
+    { id: "weather", type: "weather", title: "Outside", data: fixtures.weather, state: "normal" },
+    { id: "image", type: "image", title: "North Ridge", data: fixtures.image, state: "normal" },
+    { id: "video", type: "video", title: "Live View", data: fixtures.video, state: "normal" },
+    {
+      id: "composite-note",
+      type: "composite",
+      title: "Agent Note",
+      archetype: "textCard",
+      slots: { kicker: "Agent" },
+      data: { text: "The night is quiet.", kicker: "Agent", tone: "neutral" },
+      state: "normal",
+    },
   ],
 };
 
